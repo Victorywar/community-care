@@ -1,0 +1,6 @@
+{
+  "appId": "com.communitycare.app",
+  "appName": "Community Care",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}

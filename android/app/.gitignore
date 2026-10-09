@@ -1,0 +1,13 @@
+node_modules
+dist
+dist-ssr
+*.local
+.vscode/*
+!.vscode/extensions.json
+
+# Android build artifacts & local paths
+android/app/build
+android/build
+android/.gradle
+android/local.properties
+android/app/src/main/assets/public
