@@ -22,9 +22,9 @@ function AppContent() {
     return <Login />;
   }
 
-  const role = (currentUser?.role || '').toLowerCase();
+  // Convert role to lowercase so ADMIN, Admin, and admin all match
+  const role = (currentUser.role || '').toLowerCase();
 
-  // Logged in -> Route to their dashboard
   return (
     <DashboardLayout currentUser={currentUser} onLogout={logout}>
       {role === 'receiver' ? <ReceiverDashboard /> : <AdminDashboard />}
