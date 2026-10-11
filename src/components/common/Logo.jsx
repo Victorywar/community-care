@@ -13,7 +13,7 @@ export default function Logo({ size = 'md', inverted = false, showText = true })
   return (
     <div className="flex items-center gap-2.5 select-none">
       <div 
-        className={`${current.box} rounded-xl flex items-center justify-center shadow-sm shrink-0 ${
+        className={`${current.box} rounded-xl flex items-center justify-center shadow-xs shrink-0 ${
           inverted 
             ? 'bg-blue-600 text-white shadow-blue-500/20' 
             : 'bg-gradient-to-br from-blue-600 to-indigo-700 text-white'
