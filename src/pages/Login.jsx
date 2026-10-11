@@ -35,7 +35,6 @@ export default function Login({ onLogin }) {
           <Logo size="md" inverted={true} />
         </div>
         
-        {/* Compact Hero on Mobile */}
         <div className="mt-2">
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
             Every Contribution, <br />
@@ -134,15 +133,6 @@ export default function Login({ onLogin }) {
             LOGIN AS {role.toUpperCase()}
           </button>
         </form>
-
-        {/* Demo Credentials Quick Switcher Banner */}
-        <div className="mt-4 p-3 bg-blue-50/70 border border-blue-100 rounded-xl text-[11px] text-slate-600">
-          <div className="flex justify-between items-center">
-            <span className="font-semibold text-blue-900 capitalize">Demo: {role}</span>
-            <span className="text-slate-500 font-mono text-[10px]">Password123!</span>
-          </div>
-          <span className="block text-slate-500 truncate mt-0.5">{email}</span>
-        </div>
       </div>
 
       {/* Footer */}
