@@ -28,121 +28,133 @@ export default function Login() {
   };
 
   return (
-    // w-full மற்றும் min-h-screen வழியா screen edge-to-edge full width ஆக்குறோம்
-    <div className="min-h-screen w-full bg-[#080d1d] flex flex-col justify-between">
+    <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#080d1d]">
       
-      {/* 1. Top Hero Section - No side gaps, 100% full width */}
-      <div className="w-full px-5 pt-8 pb-6">
-        <div className="flex items-center gap-2 mb-5">
-          <Logo size="md" inverted={true} />
+      {/* 1. LEFT SIDE: Dark Navy Blue Branding Section */}
+      <div className="w-full md:w-1/2 min-h-[340px] md:min-h-screen bg-[#080d1d] p-6 sm:p-10 lg:p-16 flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-800/80">
+        <div>
+          <div className="flex items-center gap-3">
+            <Logo size="lg" inverted={true} />
+            <div>
+              <span className="text-xl font-black text-white tracking-tight">CommunityCare</span>
+              <p className="text-[10px] text-blue-400 font-semibold tracking-widest uppercase">RELIEF & DISPATCH</p>
+            </div>
+          </div>
+
+          <div className="mt-8 md:mt-20 bg-[#0f172a]/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-md">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight">
+              Every Contribution, <br />
+              <span className="text-blue-400">The Right Person,</span> <br />
+              The Right Time.
+            </h1>
+            <p className="text-slate-400 text-xs sm:text-sm mt-4 leading-relaxed max-w-md">
+              Real-time transparent distribution linking verified donors, on-ground field volunteers, and authentic recipients.
+            </p>
+          </div>
         </div>
 
-        {/* Hero Card */}
-        <div className="bg-[#0f172a] border border-slate-800 rounded-2xl p-5 shadow-inner">
-          <h1 className="text-lg font-bold text-white leading-snug">
-            Every Contribution <br />
-            The Right Person <br />
-            The Right Time
-          </h1>
-          <p className="text-slate-400 text-xs mt-2.5 leading-relaxed">
-            Real-time transparent distribution linking verified donors, on-ground field volunteers, and authentic recipients.
-          </p>
-        </div>
-
-        <p className="text-[11px] text-slate-500 mt-3 px-1">
+        <p className="text-[11px] text-slate-500 mt-6 md:mt-0 font-medium">
           © 2026 Community Care Platform. All rights reserved.
         </p>
       </div>
 
-      {/* 2. White Form Section - Edge to Edge, rounded top */}
-      <div className="w-full bg-white rounded-t-3xl px-6 pt-6 pb-8 shadow-2xl flex-1 flex flex-col justify-between">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          
-          {/* SELECT ROLE */}
+      {/* 2. RIGHT SIDE: Clean White Login Form */}
+      <div className="w-full md:w-1/2 min-h-screen bg-white rounded-t-3xl md:rounded-t-none flex flex-col justify-center px-6 sm:px-12 lg:px-16 py-10 shadow-2xl">
+        <div className="max-w-md w-full mx-auto space-y-6">
           <div>
-            <label className="text-[11px] font-bold tracking-wider text-slate-400 uppercase block mb-2">
-              SELECT ROLE
-            </label>
-            <div className="grid grid-cols-4 gap-2">
-              {roles.map((r) => {
-                const Icon = r.icon;
-                const isSelected = role === r.id;
-                return (
-                  <button
-                    key={r.id}
-                    type="button"
-                    onClick={() => handleRoleChange(r)}
-                    className={`flex flex-col items-center justify-center py-2.5 px-1 rounded-xl border text-xs font-medium transition-all cursor-pointer ${
-                      isSelected
-                        ? 'bg-[#0b1329] text-white border-[#0b1329] shadow-sm'
-                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                    }`}
-                  >
-                    <Icon size={18} className="mb-1 shrink-0" />
-                    <span className="text-[11px] truncate w-full text-center">{r.label}</span>
-                  </button>
-                );
-              })}
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Welcome Back</h2>
+            <p className="text-xs text-slate-500 mt-1">Select your access role and sign in to the console</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* SELECT ROLE */}
+            <div>
+              <label className="text-[11px] font-bold tracking-wider text-slate-400 uppercase block mb-2">
+                SELECT ROLE
+              </label>
+              <div className="grid grid-cols-4 gap-2 sm:gap-3">
+                {roles.map((r) => {
+                  const Icon = r.icon;
+                  const isSelected = role === r.id;
+                  return (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onClick={() => handleRoleChange(r)}
+                      className={`flex flex-col items-center justify-center py-3 px-1 rounded-2xl border text-xs font-semibold transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-[#080d1d] text-white border-[#080d1d] shadow-md scale-102'
+                          : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      <Icon size={18} className="mb-1.5 shrink-0" />
+                      <span className="text-[11px] truncate w-full text-center">{r.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
 
-          {/* Email or Username */}
-          <div>
-            <label className="text-xs font-semibold text-slate-700 block mb-1">
-              Email or username
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-
-          {/* Password */}
-          <div>
-            <label className="text-xs font-semibold text-slate-700 block mb-1">
-              Password
-            </label>
-            <div className="relative">
+            {/* Email Field */}
+            <div>
+              <label className="text-xs font-semibold text-slate-700 block mb-1">
+                Email or username
+              </label>
               <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-3 pr-9 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-2.5 text-xs sm:text-sm bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                 required
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
-              >
-                {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-              </button>
             </div>
-            <div className="text-right mt-1">
-              <span className="text-[11px] text-blue-600 cursor-pointer hover:underline">
-                Forgot Password?
-              </span>
+
+            {/* Password Field */}
+            <div>
+              <label className="text-xs font-semibold text-slate-700 block mb-1">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-4 pr-10 py-2.5 text-xs sm:text-sm bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-3 text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              <div className="text-right mt-1.5">
+                <span className="text-xs text-blue-600 hover:underline cursor-pointer font-medium">
+                  Forgot Password?
+                </span>
+              </div>
             </div>
+
+            {/* LOGIN SUBMIT */}
+            <button
+              type="submit"
+              className="w-full py-3.5 bg-[#080d1d] hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-widest rounded-xl shadow-lg transition-all active:scale-[0.99] cursor-pointer"
+            >
+              LOGIN AS {role}
+            </button>
+          </form>
+
+          {/* Quick Credential Hint */}
+          <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-xs text-slate-500 flex items-center justify-between">
+            <div>
+              <span className="font-bold text-slate-800">{role}:</span> {email}
+            </div>
+            <span className="text-[11px] text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md">
+              Ready
+            </span>
           </div>
-
-          {/* LOGIN BUTTON */}
-          <button
-            type="submit"
-            className="w-full py-3 bg-[#0b1329] hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-md transition-all active:scale-[0.99] cursor-pointer mt-2"
-          >
-            LOGIN AS {role}
-          </button>
-        </form>
-
-        {/* Credentials Info */}
-        <div className="mt-4 p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-[11px] text-slate-500">
-          <span className="font-semibold text-slate-700">Quick Login:</span>
-          <p className="truncate mt-0.5">
-            <strong className="text-slate-700">{role}:</strong> {email}
-          </p>
         </div>
       </div>
 
