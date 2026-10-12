@@ -1,78 +1,138 @@
-import React, { useState } from 'react';
-import { Truck, MapPin, Phone, UserCheck, CheckCircle2, Clock, Navigation } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { api } from '../../services/api';
+import { useData } from '../../context/DataContext';
+import { 
+  ShieldCheck, 
+  Clock, 
+  CheckCircle2, 
+  MapPin, 
+  Phone, 
+  Truck, 
+  AlertCircle 
+} from 'lucide-react';
 
 export default function VolunteerDispatch() {
-  const [volunteers, setVolunteers] = useState([
-    { id: 'VOL-01', name: 'Kavitha Raman', phone: '+91 98401 23456', zone: 'Ward 4 - Gandhi Nagar', status: 'ON_ROUTE', task: 'Delivering 10 Ration Kits', eta: '15 mins' },
-    { id: 'VOL-02', name: 'Suresh Kumar', phone: '+91 98402 34567', zone: 'Ward 7 - Nehru Street', status: 'AVAILABLE', task: 'Awaiting assignment', eta: 'Idle' },
-    { id: 'VOL-03', name: 'Arun Prakash', phone: '+91 98403 45678', zone: 'Ward 12 - Lake Area', status: 'DELIVERED', task: 'Completed First Aid Kits batch', eta: 'Done' }
-  ]);
+  const { requests = [], updateRequestStatus, refreshAllData } = useData();
+  const [volunteers, setVolunteers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const toggleStatus = (id) => {
-    setVolunteers(prev => prev.map(vol => {
-      if (vol.id === id) {
-        const nextStatus = vol.status === 'AVAILABLE' ? 'ON_ROUTE' : vol.status === 'ON_ROUTE' ? 'DELIVERED' : 'AVAILABLE';
-        return { ...vol, status: nextStatus };
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const res = await api.getMembers();
+      if (Array.isArray(res)) {
+        setVolunteers(res.filter(m => m.role === 'VOLUNTEER'));
       }
-      return vol;
-    }));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const approvedVolunteers = volunteers.filter(v => v.isApproved);
+  const pendingRequests = requests.filter(r => r.status === 'PENDING');
+
+  const handleAssign = async (requestId, volunteerName) => {
+    if (!volunteerName) return;
+    await updateRequestStatus(requestId, 'IN_PROGRESS', volunteerName);
+    await refreshAllData();
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Volunteer Dispatch</h1>
-          <p className="text-xs text-slate-500 mt-1">Live assignment, on-ground transport monitoring, and delivery fulfillment</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold">
-            Active in Field: {volunteers.filter(v => v.status === 'ON_ROUTE').length}
-          </span>
-        </div>
+      <div>
+        <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Volunteer Dispatch Control</h1>
+        <p className="text-xs text-slate-500 mt-1">Assign unallocated aid requests directly to verified on-ground personnel</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {volunteers.map(vol => (
-          <div key={vol.id} className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{vol.id}</span>
-              <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${
-                vol.status === 'ON_ROUTE' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                vol.status === 'DELIVERED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                'bg-blue-50 text-blue-700 border-blue-200'
-              }`}>
-                {vol.status.replace('_', ' ')}
-              </span>
-            </div>
+      {/* Available Authorized Volunteers */}
+      <div className="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-xs space-y-4">
+        <h2 className="text-sm font-black text-slate-900 flex items-center gap-2">
+          <ShieldCheck size={16} className="text-emerald-500" />
+          <span>Active Approved Field Personnel ({approvedVolunteers.length})</span>
+        </h2>
 
-            <div>
-              <h3 className="text-sm font-black text-slate-900">{vol.name}</h3>
-              <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-1">
-                <MapPin size={13} className="text-slate-400" /> {vol.zone}
-              </p>
-              <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-1">
-                <Phone size={13} className="text-slate-400" /> {vol.phone}
-              </p>
-            </div>
-
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs">
-              <span className="text-[10px] font-bold text-slate-400 uppercase block">Current Task</span>
-              <p className="font-semibold text-slate-800 mt-0.5">{vol.task}</p>
-              <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-200/60 text-[11px] text-slate-500">
-                <span className="flex items-center gap-1"><Clock size={12}/> ETA</span>
-                <span className="font-bold text-slate-700">{vol.eta}</span>
-              </div>
-            </div>
-
-            <button
-              onClick={() => toggleStatus(vol.id)}
-              className="w-full py-2.5 bg-[#080d1d] hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
-            >
-              Update Stage
-            </button>
+        {loading ? (
+          <p className="text-xs text-slate-400 py-4 text-center">Checking database roster...</p>
+        ) : approvedVolunteers.length === 0 ? (
+          <div className="p-6 border border-dashed border-slate-200 rounded-2xl text-center text-xs text-slate-400">
+            No approved volunteers yet. Please approve registered applicants in the <strong>Community Members</strong> tab first.
           </div>
-        ))}
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {approvedVolunteers.map((vol) => (
+              <div key={vol._id} className="p-4 rounded-2xl border border-slate-100 bg-slate-50/60 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-900 text-xs">{vol.name}</span>
+                  <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-extrabold text-[9px] rounded-full border border-emerald-200">
+                    AUTHORIZED
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 flex items-center gap-1.5">
+                  <MapPin size={12} className="text-slate-400 shrink-0" /> {vol.address || 'Field Base'}
+                </p>
+                <p className="text-[11px] text-slate-500 flex items-center gap-1.5">
+                  <Phone size={12} className="text-slate-400 shrink-0" /> {vol.phone || 'No direct phone'}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Direct Assignment Queue */}
+      <div className="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-xs space-y-4">
+        <h2 className="text-sm font-black text-slate-900 flex items-center gap-2">
+          <Truck size={16} className="text-blue-600" />
+          <span>Unassigned Help Tickets Needing Dispatch ({pendingRequests.length})</span>
+        </h2>
+
+        {pendingRequests.length === 0 ? (
+          <div className="p-6 border border-dashed border-slate-200 rounded-2xl text-center text-xs text-slate-400">
+            All tickets are assigned or fulfilled. No pending dispatches at this moment.
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {pendingRequests.map((req) => (
+              <div key={req.id} className="py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs">
+                <div>
+                  <p className="font-bold text-slate-900 text-sm">{req.title}</p>
+                  <p className="text-slate-500 text-[11px] mt-0.5">
+                    Beneficiary: <strong>{req.recipientName}</strong> • {req.location}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <select
+                    id={`select-${req.id}`}
+                    className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    defaultValue=""
+                  >
+                    <option value="" disabled>Select Volunteer</option>
+                    {approvedVolunteers.map(v => (
+                      <option key={v._id} value={v.name}>{v.name}</option>
+                    ))}
+                  </select>
+
+                  <button
+                    onClick={() => {
+                      const select = document.getElementById(`select-${req.id}`);
+                      handleAssign(req.id, select.value);
+                    }}
+                    className="px-4 py-2 bg-[#080d1d] hover:bg-slate-800 text-white font-bold rounded-xl text-xs transition-all cursor-pointer shadow-xs"
+                  >
+                    Dispatch Unit
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

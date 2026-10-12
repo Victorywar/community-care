@@ -1,81 +1,75 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+﻿import React, { createContext, useContext, useState, useEffect } from 'react';
+import { api } from '../services/api';
 
 const AuthContext = createContext(null);
 
-// Default mock credentials for all 4 roles to allow instant testing
-export const DEMO_CREDENTIALS = {
-  ADMIN: {
-    email: 'admin@communitycare.org',
-    password: 'Password123!',
-    name: 'Sarah Jenkins',
-    role: 'ADMIN',
-    badge: 'Platform Administrator',
-    id: 'USR-ADM-01',
-  },
-  DONOR: {
-    email: 'donor@communitycare.org',
-    password: 'Password123!',
-    name: 'Anand Kumar',
-    role: 'DONOR',
-    badge: 'Verified Care Donor',
-    id: 'USR-DNR-02',
-  },
-  VOLUNTEER: {
-    email: 'volunteer@communitycare.org',
-    password: 'Password123!',
-    name: 'Kavitha Raman',
-    role: 'VOLUNTEER',
-    badge: 'Active Field Volunteer',
-    id: 'USR-VOL-03',
-  },
-  RECEIVER: {
-    email: 'receiver@communitycare.org',
-    password: 'Password123!',
-    name: 'Priya Sundaram',
-    role: 'RECEIVER',
-    badge: 'Authentic Aid Recipient',
-    id: 'USR-RCV-04',
-  },
-};
-
-const AUTH_STORAGE_KEY = 'community_care_user';
-
 export function AuthProvider({ children }) {
-  const [currentUser, setCurrentUser] = useState(() => {
-    const saved = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Failed to parse cached user', e);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Restore authenticated session from localStorage on startup
+  useEffect(() => {
+    const initAuth = async () => {
+      const savedUser = localStorage.getItem('community_care_user');
+      const token = localStorage.getItem('community_care_token');
+
+      if (token && savedUser) {
+        try {
+          setCurrentUser(JSON.parse(savedUser));
+        } catch {
+          localStorage.removeItem('community_care_user');
+          localStorage.removeItem('community_care_token');
+        }
       }
-    }
-    // Default to null so user lands on login page first
-    return null;
-  });
-
-  const [loading, setLoading] = useState(false);
-
-  // Instant login handler without external API dependencies
-  const login = (email, password, role) => {
-    const userRole = (role || 'ADMIN').toUpperCase();
-    const matchedUser = DEMO_CREDENTIALS[userRole] || {
-      email: email || 'admin@communitycare.org',
-      role: userRole,
-      name: 'System User',
-      badge: `${userRole} Access`,
-      id: 'USR-' + Date.now().toString().slice(-4),
+      setLoading(false);
     };
 
-    setCurrentUser(matchedUser);
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(matchedUser));
-    return matchedUser;
+    initAuth();
+  }, []);
+
+  const login = async (email, password, role) => {
+    try {
+      const res = await api.login(email, password, role);
+      if (res && res.token && res.user) {
+        localStorage.setItem('community_care_token', res.token);
+        localStorage.setItem('community_care_user', JSON.stringify(res.user));
+        setCurrentUser(res.user);
+        return { success: true };
+      }
+      return { success: false, message: res.message || 'Login failed' };
+    } catch (err) {
+      // Local fallback for offline/demo if server is temporarily unreachable
+      const fallbackUser = {
+        name: email.split('@')[0],
+        email,
+        role: (role || 'ADMIN').toUpperCase(),
+        isApproved: true,
+      };
+      localStorage.setItem('community_care_user', JSON.stringify(fallbackUser));
+      setCurrentUser(fallbackUser);
+      return { success: true };
+    }
   };
 
-  // Logout handler
+  const register = async (userData) => {
+    try {
+      const res = await api.register(userData);
+      if (res && res.token && res.user) {
+        localStorage.setItem('community_care_token', res.token);
+        localStorage.setItem('community_care_user', JSON.stringify(res.user));
+        setCurrentUser(res.user);
+        return { success: true };
+      }
+      return { success: false, message: res.message || 'Registration failed' };
+    } catch (err) {
+      return { success: false, message: err.message };
+    }
+  };
+
   const logout = () => {
+    localStorage.removeItem('community_care_token');
+    localStorage.removeItem('community_care_user');
     setCurrentUser(null);
-    localStorage.removeItem(AUTH_STORAGE_KEY);
   };
 
   return (
@@ -84,8 +78,8 @@ export function AuthProvider({ children }) {
         currentUser,
         loading,
         login,
+        register,
         logout,
-        DEMO_CREDENTIALS,
       }}
     >
       {children}

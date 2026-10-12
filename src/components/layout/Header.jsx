@@ -1,61 +1,109 @@
-import React from 'react';
-import { Search, Bell, LogOut, Menu } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { api } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
+import { Bell, LogOut, UserCheck, Package, Heart, Clock } from 'lucide-react';
 
-export default function Header({ 
-  title = "Dashboard", 
-  subtitle = "Community Care aid allocation platform", 
-  unreadCount = 3,
-  onLogout,
-  onOpenMobileMenu
-}) {
+export default function Header() {
+  const { logout, currentUser } = useAuth();
+  const [notifications, setNotifications] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  const fetchNotes = async () => {
+    try {
+      const res = await api.getNotifications();
+      if (Array.isArray(res)) {
+        setNotifications(res);
+      }
+    } catch (e) {
+      console.warn('Failed to load notifications');
+    }
+  };
+
+  useEffect(() => {
+    fetchNotes();
+    const interval = setInterval(fetchNotes, 4000); // 4 வினாடிக்கு ஒருமுறை செக் செய்யும்
+    return () => clearInterval(interval);
+  }, []);
+
+  const unreadCount = notifications.filter(n => n.unread).length;
+
   return (
-    <header className="h-16 bg-white border-b border-slate-200 px-4 md:px-8 flex items-center justify-between sticky top-0 z-30 shadow-xs">
-      <div className="flex items-center gap-3 min-w-0">
-        <button
-          onClick={onOpenMobileMenu}
-          className="md:hidden p-2 text-slate-700 hover:bg-slate-100 rounded-lg cursor-pointer"
-        >
-          <Menu size={20} />
-        </button>
-
-        <div className="min-w-0">
-          <h2 className="text-base md:text-lg font-bold text-slate-900 tracking-tight truncate">
-            {title}
-          </h2>
-          <p className="hidden sm:block text-xs text-slate-500 truncate">
-            {subtitle}
-          </p>
-        </div>
+    <header className="h-16 px-6 bg-white border-b border-slate-200/80 flex items-center justify-between sticky top-0 z-30">
+      <div>
+        <h2 className="text-sm font-black text-slate-800 tracking-tight">Admin Command Platform</h2>
+        <p className="text-[10px] text-slate-400">Live Operation & Dispatch Registry</p>
       </div>
 
-      <div className="flex items-center gap-2.5 sm:gap-4 shrink-0">
-        <div className="relative hidden lg:block w-64">
-          <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search records..."
-            className="w-full pl-9 pr-3.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white"
-          />
+      <div className="flex items-center gap-3">
+        {/* Real Notification Bell with Badge */}
+        <div className="relative">
+          <button
+            onClick={() => setShowDropdown(!showDropdown)}
+            className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 transition-all cursor-pointer relative"
+          >
+            <Bell size={18} />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white animate-pulse">
+                {unreadCount}
+              </span>
+            )}
+          </button>
+
+          {/* Notifications Dropdown Panel */}
+          {showDropdown && (
+            <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-slate-200/80 overflow-hidden z-50">
+              <div className="p-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+                <span className="text-xs font-black text-slate-800">Operational Alerts</span>
+                <span className="text-[10px] font-bold text-slate-400">{notifications.length} Total</span>
+              </div>
+
+              <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
+                {notifications.length === 0 ? (
+                  <p className="text-center py-6 text-xs text-slate-400">No recent alerts.</p>
+                ) : (
+                  notifications.map((n) => (
+                    <div key={n.id} className={`p-3 text-xs flex gap-3 hover:bg-slate-50 transition-colors ${n.unread ? 'bg-amber-50/40' : ''}`}>
+                      <div className="mt-0.5">
+                        {n.type === 'VOLUNTEER_PENDING' ? (
+                          <div className="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">
+                            <UserCheck size={14} />
+                          </div>
+                        ) : n.type === 'AID_REQUEST' ? (
+                          <div className="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
+                            <Package size={14} />
+                          </div>
+                        ) : (
+                          <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                            <Heart size={14} />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <p className="font-bold text-slate-800 text-[11px]">{n.title}</p>
+                          <span className="text-[9px] text-slate-400 flex items-center gap-0.5">
+                            <Clock size={10} />
+                            {new Date(n.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">{n.message}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
-        <button 
-          className="relative p-2 rounded-lg text-slate-600 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer"
-          title="Notifications"
-        >
-          <Bell size={16} />
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border-2 border-white">
-              {unreadCount}
-            </span>
-          )}
-        </button>
-
+        {/* Logout Button */}
         <button
-          onClick={onLogout}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg shadow-xs transition-colors cursor-pointer"
+          onClick={logout}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#080d1d] hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
         >
           <LogOut size={13} />
-          <span className="hidden sm:inline">Logout</span>
+          <span>Logout</span>
         </button>
       </div>
     </header>
