@@ -1,127 +1,157 @@
 ﻿import React, { createContext, useContext, useState, useEffect } from 'react';
 
-const DataContext = createContext();
+const DataContext = createContext(null);
 
-const STORAGE_KEY = 'community_care_db_v1';
+const STORAGE_KEY_REQUESTS = 'community_care_requests';
+const STORAGE_KEY_DONATIONS = 'community_care_donations';
+const STORAGE_KEY_RECEIPTS = 'community_care_receipts';
 
 export function DataProvider({ children }) {
-  const [data, setData] = useState(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Failed to parse stored data', e);
-      }
-    }
-    return {
-      requests: [],
-      donations: [],
-      volunteers: [],
-    };
+  // Live state initialized from localStorage
+  const [requests, setRequests] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEY_REQUESTS);
+    return saved ? JSON.parse(saved) : [];
   });
 
+  const [donations, setDonations] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEY_DONATIONS);
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [receipts, setReceipts] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEY_RECEIPTS);
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Sync state to local storage
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  }, [data]);
+    localStorage.setItem(STORAGE_KEY_REQUESTS, JSON.stringify(requests));
+  }, [requests]);
 
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY_DONATIONS, JSON.stringify(donations));
+  }, [donations]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY_RECEIPTS, JSON.stringify(receipts));
+  }, [receipts]);
+
+  // Helper to generate a realistic cryptographic hex hash
+  const generateHash = () => {
+    const chars = '0123456789abcdef';
+    let hash = '0x';
+    for (let i = 0; i < 40; i++) {
+      hash += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return hash;
+  };
+
+  // Add a new relief request with full timeline initiation
   const addRequest = (newReq) => {
-    const item = {
-      id: 'REQ-' + Date.now().toString().slice(-4),
-      title: newReq.title || 'Emergency Ration / Aid',
-      category: newReq.category || 'General',
-      recipientName: newReq.recipientName || 'Anonymous Citizen',
-      location: newReq.location || 'Local District',
-      quantity: newReq.quantity || 1,
-      urgency: newReq.urgency || 'high',
-      status: 'pending',
-      createdAt: new Date().toISOString(),
+    const timestamp = new Date().toLocaleString();
+    const reqItem = {
+      id: 'REQ-' + Date.now().toString().slice(-5),
+      createdAt: timestamp,
+      status: 'PENDING',
+      timeline: [
+        {
+          stage: 'Request Logged',
+          desc: 'Beneficiary registered aid ticket in the community portal.',
+          time: timestamp,
+          agent: 'Portal Verification Engine'
+        }
+      ],
+      ...newReq,
     };
-    setData((prev) => ({
-      ...prev,
-      requests: [item, ...prev.requests],
-    }));
+    setRequests((prev) => [reqItem, ...prev]);
+    return reqItem;
   };
 
-  const approveRequest = (requestId) => {
-    setData((prev) => ({
-      ...prev,
-      requests: prev.requests.map((r) =>
-        r.id === requestId ? { ...r, status: 'approved' } : r
-      ),
-    }));
+  // Progress request timeline stage & trigger automated digital receipt upon fulfillment
+  const updateRequestStatus = (id, newStatus, agentName = 'Central Dispatch Admin') => {
+    const timestamp = new Date().toLocaleString();
+
+    setRequests((prev) =>
+      prev.map((req) => {
+        if (req.id === id) {
+          const nextTimeline = [
+            ...(req.timeline || []),
+            {
+              stage: newStatus === 'IN_PROGRESS' ? 'Volunteer Dispatched' : 'Aid Fulfilled & Verified',
+              desc:
+                newStatus === 'IN_PROGRESS'
+                  ? `Assigned to regional dispatch unit. Transport active.`
+                  : `Aid handed over to ${req.recipientName || 'Beneficiary'}. Sign-off confirmed.`,
+              time: timestamp,
+              agent: agentName,
+            },
+          ];
+
+          // If marked fulfilled, automatically append an immutable Digital Receipt
+          if (newStatus === 'FULFILLED') {
+            const newReceipt = {
+              id: 'RCP-' + new Date().getFullYear() + '-' + Date.now().toString().slice(-4),
+              requestId: req.id,
+              donor: req.donorName || 'Community Aid Reserve',
+              item: `${req.quantity || '1 Kit'} - ${req.title}`,
+              beneficiary: `${req.recipientName} (${req.location})`,
+              date: new Date().toISOString().split('T')[0],
+              timestamp: timestamp,
+              hash: generateHash(),
+              status: 'VERIFIED',
+              timeline: nextTimeline
+            };
+            setReceipts((existing) => [newReceipt, ...existing]);
+          }
+
+          return { ...req, status: newStatus, timeline: nextTimeline };
+        }
+        return req;
+      })
+    );
   };
 
-  const rejectRequest = (requestId) => {
-    setData((prev) => ({
-      ...prev,
-      requests: prev.requests.map((r) =>
-        r.id === requestId ? { ...r, status: 'rejected' } : r
-      ),
-    }));
-  };
-
-  const addVolunteer = (volunteer) => {
-    const item = {
-      id: 'VOL-' + Date.now().toString().slice(-4),
-      name: volunteer.name,
-      phone: volunteer.phone,
-      status: 'available',
+  // Add donation and record initial receipt
+  const addDonation = (newDon) => {
+    const timestamp = new Date().toLocaleString();
+    const donationItem = {
+      id: 'DON-' + Date.now().toString().slice(-5),
+      createdAt: timestamp,
+      ...newDon,
     };
-    setData((prev) => ({
-      ...prev,
-      volunteers: [item, ...prev.volunteers],
-    }));
-  };
+    setDonations((prev) => [donationItem, ...prev]);
 
-  const addDonation = (donation) => {
-    const item = {
-      id: 'DON-' + Date.now().toString().slice(-4),
-      donorName: donation.donorName || 'Anonymous',
-      items: donation.items,
-      status: 'matching',
-      createdAt: new Date().toISOString(),
+    // Generate verified receipt for financial/inventory donations
+    const newReceipt = {
+      id: 'RCP-' + new Date().getFullYear() + '-' + Date.now().toString().slice(-4),
+      donor: newDon.donorName,
+      item: `${newDon.amountOrQty} (${newDon.category})`,
+      beneficiary: 'Community Central Warehouse',
+      date: new Date().toISOString().split('T')[0],
+      timestamp: timestamp,
+      hash: generateHash(),
+      status: 'VERIFIED',
+      timeline: [
+        {
+          stage: 'Donation Deposited',
+          desc: `Logged into warehouse registry under ${newDon.category}.`,
+          time: timestamp,
+          agent: 'Asset Vault Service'
+        }
+      ]
     };
-    setData((prev) => ({
-      ...prev,
-      donations: [item, ...prev.donations],
-    }));
+    setReceipts((prev) => [newReceipt, ...prev]);
   };
-
-  // Clear everything back to empty
-  const clearAllData = () => {
-    const cleanState = {
-      requests: [],
-      donations: [],
-      volunteers: [],
-    };
-    setData(cleanState);
-    localStorage.removeItem(STORAGE_KEY);
-  };
-
-  const pendingRequestsCount = data.requests.filter((r) => r.status === 'pending').length;
-  const approvedRequestsCount = data.requests.filter((r) => r.status === 'approved').length;
-  const activeDonationsCount = data.donations.length;
-  const activeVolunteersCount = data.volunteers.length;
 
   return (
     <DataContext.Provider
       value={{
-        requests: data.requests,
-        donations: data.donations,
-        volunteers: data.volunteers,
-        stats: {
-          pendingRequests: pendingRequestsCount,
-          peopleHelped: approvedRequestsCount,
-          activeDonations: activeDonationsCount,
-          activeVolunteers: activeVolunteersCount,
-        },
+        requests,
+        donations,
+        receipts,
         addRequest,
-        approveRequest,
-        rejectRequest,
-        addVolunteer,
+        updateRequestStatus,
         addDonation,
-        clearAllData,
       }}
     >
       {children}
