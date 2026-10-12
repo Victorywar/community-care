@@ -1,103 +1,96 @@
 import React from 'react';
+import Logo from '../common/Logo';
 import { 
   LayoutDashboard, 
+  HelpCircle, 
   HeartHandshake, 
   Truck, 
   Users, 
-  HelpCircle, 
   FileText, 
   MessageSquare,
-  X
+  LogOut,
+  ShieldCheck
 } from 'lucide-react';
-import Logo from '../common/Logo';
 
-export default function Sidebar({ currentTab, setCurrentTab, currentUser, isOpen, onClose }) {
+export default function Sidebar({ activeTab = 'home', onSelectTab, currentUser, onLogout }) {
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard Home', icon: LayoutDashboard },
+    { id: 'home', label: 'Dashboard Home', icon: LayoutDashboard },
     { id: 'requests', label: 'Help Requests', icon: HelpCircle },
     { id: 'donations', label: 'Donation Management', icon: HeartHandshake },
     { id: 'dispatch', label: 'Volunteer Dispatch', icon: Truck },
-    { id: 'users', label: 'Community Members', icon: Users },
+    { id: 'members', label: 'Community Members', icon: Users },
     { id: 'receipts', label: 'Digital Receipts', icon: FileText },
-    { id: 'relay', label: 'Live Relay Chat', icon: MessageSquare },
+    { id: 'chat', label: 'Live Relay Chat', icon: MessageSquare },
   ];
 
   return (
-    <>
-      {/* Mobile Backdrop */}
-      {isOpen && (
-        <div 
-          onClick={onClose}
-          className="fixed inset-0 bg-slate-900/60 z-40 md:hidden backdrop-blur-xs transition-opacity"
-        />
-      )}
+    <aside className="w-64 min-h-screen bg-[#080d1d] border-r border-slate-800/80 flex flex-col justify-between shrink-0 select-none">
+      {/* Top Branding Section */}
+      <div>
+        <div className="p-6 border-b border-slate-800/70">
+          <Logo size="md" inverted={true} showText={true} />
+        </div>
 
-      {/* Sidebar Drawer */}
-      <aside 
-        className={`fixed md:static top-0 bottom-0 left-0 z-50 w-64 bg-[#0b1329] flex flex-col justify-between border-r border-slate-800 text-slate-300 min-h-screen select-none shrink-0 transition-transform duration-200 ease-in-out ${
-          isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-        }`}
-      >
-        <div>
-          {/* Brand Header */}
-          <div className="h-16 flex items-center justify-between px-5 border-b border-slate-800 bg-[#080d1d]">
-            <Logo size="sm" inverted={true} showText={true} />
-            <button 
-              onClick={onClose}
-              className="md:hidden text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer"
-            >
-              <X size={18} />
-            </button>
-          </div>
+        {/* Navigation List */}
+        <div className="px-3 py-6 space-y-1">
+          <p className="px-3 text-[10px] font-bold tracking-wider text-slate-500 uppercase mb-3">
+            Navigation Menu
+          </p>
 
-          <div className="px-6 pt-5 pb-2">
-            <span className="text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
-              Navigation Menu
-            </span>
-          </div>
-
-          <nav className="px-3 space-y-1">
+          <nav className="space-y-1">
             {menuItems.map((item) => {
               const Icon = item.icon;
-              const isActive = currentTab === item.id;
+              const isActive = activeTab === item.id;
+
               return (
                 <button
                   key={item.id}
-                  onClick={() => {
-                    setCurrentTab(item.id);
-                    if (onClose) onClose();
-                  }}
-                  className={`w-full flex items-center gap-3.5 px-4 py-2.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                  type="button"
+                  onClick={() => onSelectTab && onSelectTab(item.id)}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer text-left ${
                     isActive
-                      ? 'bg-[#162244] text-white font-semibold border-l-4 border-blue-500 rounded-l-none'
-                      : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
+                      ? 'bg-[#152445] text-white shadow-xs border-l-3 border-blue-500'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
                   }`}
                 >
-                  <Icon size={17} className={isActive ? 'text-blue-400' : 'text-slate-400'} />
-                  <span>{item.label}</span>
+                  <Icon 
+                    size={18} 
+                    className={`shrink-0 ${isActive ? 'text-blue-400' : 'text-slate-400'}`} 
+                  />
+                  <span className="truncate">{item.label}</span>
                 </button>
               );
             })}
           </nav>
         </div>
+      </div>
 
-        {/* User Card */}
-        <div className="p-4 border-t border-slate-800 bg-[#080d1d]">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white text-xs shadow-inner shrink-0">
-              {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : 'A'}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-white truncate">
-                {currentUser?.name || 'Administrator'}
-              </p>
-              <p className="text-[11px] text-slate-400 truncate">
-                {currentUser?.role || 'SYSTEM ADMIN'}
-              </p>
+      {/* Bottom User Profile & Logout */}
+      <div className="p-4 border-t border-slate-800/80 space-y-3">
+        <div className="flex items-center gap-3 px-2 py-1.5 bg-slate-900/60 rounded-xl border border-slate-800">
+          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-xs">
+            {currentUser?.name?.charAt(0) || 'A'}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold text-white truncate">
+              {currentUser?.name || 'Administrator'}
+            </p>
+            <div className="flex items-center gap-1 text-[10px] text-slate-400">
+              <ShieldCheck size={11} className="text-emerald-400 shrink-0" />
+              <span className="truncate">{currentUser?.role || 'ADMIN'}</span>
             </div>
           </div>
         </div>
-      </aside>
-    </>
+
+        <button
+          type="button"
+          onClick={onLogout}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold text-rose-400 hover:text-white hover:bg-rose-500/20 rounded-xl transition-all cursor-pointer"
+        >
+          <LogOut size={15} />
+          <span>Sign Out</span>
+        </button>
+      </div>
+    </aside>
   );
 }

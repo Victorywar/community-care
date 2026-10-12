@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Logo from '../components/common/Logo';
-import { ShieldCheck, HeartHandshake, Truck, User, Eye, EyeOff } from 'lucide-react';
+import { ShieldCheck, HeartHandshake, Truck, User, Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
@@ -28,134 +28,113 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#080d1d]">
+    <div className="min-h-screen w-full bg-[#f8faff] flex flex-col justify-between items-center p-4 sm:p-6 text-slate-800">
       
-      {/* 1. LEFT SIDE: Dark Navy Blue Branding Section */}
-      <div className="w-full md:w-1/2 min-h-[340px] md:min-h-screen bg-[#080d1d] p-6 sm:p-10 lg:p-16 flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-800/80">
-        <div>
-          <div className="flex items-center gap-3">
-            <Logo size="lg" inverted={true} />
-            <div>
-              <span className="text-xl font-black text-white tracking-tight">CommunityCare</span>
-              <p className="text-[10px] text-blue-400 font-semibold tracking-widest uppercase">RELIEF & DISPATCH</p>
-            </div>
-          </div>
-
-          <div className="mt-8 md:mt-20 bg-[#0f172a]/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-md">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight">
-              Every Contribution, <br />
-              <span className="text-blue-400">The Right Person,</span> <br />
-              The Right Time.
-            </h1>
-            <p className="text-slate-400 text-xs sm:text-sm mt-4 leading-relaxed max-w-md">
-              Real-time transparent distribution linking verified donors, on-ground field volunteers, and authentic recipients.
-            </p>
-          </div>
-        </div>
-
-        <p className="text-[11px] text-slate-500 mt-6 md:mt-0 font-medium">
-          © 2026 Community Care Platform. All rights reserved.
-        </p>
+      {/* Top Header Logo */}
+      <div className="w-full max-w-sm flex items-center justify-start pt-3 sm:pt-6">
+        <Logo size="md" inverted={false} showText={true} />
       </div>
 
-      {/* 2. RIGHT SIDE: Clean White Login Form */}
-      <div className="w-full md:w-1/2 min-h-screen bg-white rounded-t-3xl md:rounded-t-none flex flex-col justify-center px-6 sm:px-12 lg:px-16 py-10 shadow-2xl">
-        <div className="max-w-md w-full mx-auto space-y-6">
+      {/* Center Floating Card */}
+      <div className="w-full max-w-sm bg-white rounded-3xl shadow-xl shadow-slate-200/60 border border-slate-100 p-6 sm:p-8 my-auto">
+        <div className="mb-6">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#111836] tracking-tight">
+            Welcome Back!
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1.5 font-medium">
+            Relief & dispatch console access
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          
+          {/* Role Selector Badges */}
           <div>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Welcome Back</h2>
-            <p className="text-xs text-slate-500 mt-1">Select your access role and sign in to the console</p>
+            <div className="grid grid-cols-4 gap-1.5 p-1 bg-slate-50 rounded-2xl border border-slate-100">
+              {roles.map((r) => {
+                const isSelected = role === r.id;
+                return (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => handleRoleChange(r)}
+                    className={`py-2 px-1 text-[11px] font-bold rounded-xl transition-all cursor-pointer truncate ${
+                      isSelected
+                        ? 'bg-[#121a36] text-white shadow-sm'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    {r.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* SELECT ROLE */}
-            <div>
-              <label className="text-[11px] font-bold tracking-wider text-slate-400 uppercase block mb-2">
-                SELECT ROLE
-              </label>
-              <div className="grid grid-cols-4 gap-2 sm:gap-3">
-                {roles.map((r) => {
-                  const Icon = r.icon;
-                  const isSelected = role === r.id;
-                  return (
-                    <button
-                      key={r.id}
-                      type="button"
-                      onClick={() => handleRoleChange(r)}
-                      className={`flex flex-col items-center justify-center py-3 px-1 rounded-2xl border text-xs font-semibold transition-all cursor-pointer ${
-                        isSelected
-                          ? 'bg-[#080d1d] text-white border-[#080d1d] shadow-md scale-102'
-                          : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                      }`}
-                    >
-                      <Icon size={18} className="mb-1.5 shrink-0" />
-                      <span className="text-[11px] truncate w-full text-center">{r.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Email Field */}
-            <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">
-                Email or username
-              </label>
+          {/* Email / Username Input */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-700 block">
+              Email or Username
+            </label>
+            <div className="relative flex items-center">
+              <Mail size={18} className="absolute left-3.5 text-slate-400 pointer-events-none" />
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2.5 text-xs sm:text-sm bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                placeholder="e.g. admin@communitycare.org"
+                className="w-full pl-10 pr-4 py-3 text-xs sm:text-sm bg-[#f9fafc] border border-slate-200/90 rounded-2xl text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#121a36] focus:ring-1 focus:ring-[#121a36] transition-all"
                 required
               />
             </div>
-
-            {/* Password Field */}
-            <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-4 pr-10 py-2.5 text-xs sm:text-sm bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-3 text-slate-400 hover:text-slate-600 cursor-pointer"
-                >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-              <div className="text-right mt-1.5">
-                <span className="text-xs text-blue-600 hover:underline cursor-pointer font-medium">
-                  Forgot Password?
-                </span>
-              </div>
-            </div>
-
-            {/* LOGIN SUBMIT */}
-            <button
-              type="submit"
-              className="w-full py-3.5 bg-[#080d1d] hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-widest rounded-xl shadow-lg transition-all active:scale-[0.99] cursor-pointer"
-            >
-              LOGIN AS {role}
-            </button>
-          </form>
-
-          {/* Quick Credential Hint */}
-          <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-xs text-slate-500 flex items-center justify-between">
-            <div>
-              <span className="font-bold text-slate-800">{role}:</span> {email}
-            </div>
-            <span className="text-[11px] text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md">
-              Ready
-            </span>
           </div>
-        </div>
+
+          {/* Password Input */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-700 block">
+              Password
+            </label>
+            <div className="relative flex items-center">
+              <Lock size={18} className="absolute left-3.5 text-slate-400 pointer-events-none" />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
+                className="w-full pl-10 pr-10 py-3 text-xs sm:text-sm bg-[#f9fafc] border border-slate-200/90 rounded-2xl text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#121a36] focus:ring-1 focus:ring-[#121a36] transition-all"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+            
+            <div className="text-right pt-1">
+              <span className="text-xs font-bold text-[#121a36] hover:underline cursor-pointer">
+                Forgot Password?
+              </span>
+            </div>
+          </div>
+
+          {/* Dark Login Button */}
+          <button
+            type="submit"
+            className="w-full py-3.5 mt-2 bg-[#121a36] hover:bg-[#1c274f] text-white font-bold text-sm rounded-2xl shadow-md shadow-slate-900/10 active:scale-[0.99] transition-all cursor-pointer"
+          >
+            Login
+          </button>
+        </form>
+      </div>
+
+      {/* Footer Text */}
+      <div className="pb-3 text-center">
+        <p className="text-[11px] font-medium tracking-[0.2em] text-slate-400 uppercase">
+          © 2026 Community Care Platform
+        </p>
       </div>
 
     </div>
