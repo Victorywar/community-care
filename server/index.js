@@ -5,41 +5,40 @@ require('dotenv').config();
 
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: '25mb' })); // Support base64 photos
+app.use(express.json({ limit: '25mb' }));
 
-// Extended MongoDB Schema with Timeline history, photos, reviews
 const RequestSchema = new mongoose.Schema({
   itemName: { type: String, required: true },
   quantity: { type: Number, default: 1 },
   description: { type: String, default: '' },
   location: { type: String, required: true },
-  recipientId: { type: String, default: '' },
   recipientName: { type: String, required: true },
   recipientPhoto: { type: String, default: '' },
   
-  // Verification
+  // Admin Approval
   verifiedBy: { type: String, default: '' },
   verifiedAt: { type: Date },
 
-  // Donation
+  // Donor Acceptance & Pledge
   donorName: { type: String, default: '' },
+  donationType: { type: String, default: 'Supplies' }, // e.g. Cloth, Food, Medical
   donationPhoto: { type: String, default: '' },
   fundedAt: { type: Date },
 
-  // Volunteer Dispatch
+  // Volunteer Dispatch Acceptance
   volunteerName: { type: String, default: '' },
   acceptedAt: { type: Date },
   pickupLocation: { type: String, default: '' },
   dispatchPhoto: { type: String, default: '' },
 
-  // Delivery & Review
+  // Final Delivery & Review
   completedAt: { type: Date },
   reviewStars: { type: Number, default: 5 },
   reviewComment: { type: String, default: '' },
 
   status: { 
     type: String, 
-    enum: ['PENDING', 'VERIFIED', 'FUNDED', 'DISPATCHED', 'COMPLETED'], 
+    enum: ['PENDING', 'ACCEPTED', 'VERIFIED', 'FUNDED', 'DISPATCHED', 'COMPLETED'], 
     default: 'PENDING' 
   },
   timeline: [{
@@ -71,7 +70,7 @@ const Request = mongoose.models.Request || mongoose.model('Request', RequestSche
 const User = mongoose.models.User || mongoose.model('User', UserSchema);
 const Notification = mongoose.models.Notification || mongoose.model('Notification', NotificationSchema);
 
-// Profile Endpoints
+// Profile APIs
 app.get('/api/auth/profile/:email', async (req, res) => {
   try {
     const user = await User.findOne({ email: req.params.email });
@@ -93,13 +92,12 @@ app.post('/api/auth/profile', async (req, res) => {
 
 app.get('/api/users', async (req, res) => {
   try {
-    // Only real users from DB, 0 default mock names
     const users = await User.find().select('-password').sort({ createdAt: -1 });
     res.json(users);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Requests & Workflow Timeline Endpoints
+// Requests APIs
 app.get('/api/requests', async (req, res) => {
   try {
     const list = await Request.find().sort({ createdAt: -1 });
@@ -120,109 +118,118 @@ app.post('/api/requests', async (req, res) => {
       status: 'PENDING',
       timeline: [{
         stage: 'REQUESTED',
-        title: 'Aid Request Submitted',
-        description: `${recipientName} created aid requisition for ${quantity}x ${itemName}`,
+        title: 'Requisition Created',
+        description: `${recipientName} requested ${quantity}x ${itemName}`,
         actor: recipientName
       }]
     });
 
     await Notification.create({
       role: 'ADMIN',
-      title: '🚨 New Relief Request Submitted',
-      message: `${recipientName} requested ${quantity}x ${itemName} at ${location}. Verification required.`
+      title: '🚨 Pending Requisition Needs Approval',
+      message: `${recipientName} submitted request for ${quantity}x ${itemName} at ${location}. Approval required!`
     });
 
     res.status(201).json(newReq);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Pipeline State Transitions with Timelines
+// Step-by-step Timeline & Accept Action
 app.patch('/api/requests/:id/timeline-step', async (req, res) => {
   try {
-    const { action, actor, notes, photo, location } = req.body;
-    const reqDoc = await Request.findById(req.params.id);
-    if (!reqDoc) return res.status(404).json({ error: 'Request not found' });
+    const { action, actor, donationType, photo, location, stars, comment } = req.body;
+    const item = await Request.findById(req.params.id);
+    if (!item) return res.status(404).json({ error: 'Request not found' });
 
-    if (action === 'VERIFY') {
-      reqDoc.status = 'VERIFIED';
-      reqDoc.verifiedBy = actor;
-      reqDoc.verifiedAt = new Date();
-      reqDoc.timeline.push({
-        stage: 'VERIFIED',
-        title: 'Request Approved & Verified',
-        description: `Verified by Administrator (${actor}). Need opened to Donor Ledger.`,
-        actor
+    if (action === 'ADMIN_APPROVE' || action === 'VERIFY') {
+      item.status = 'ACCEPTED';
+      item.verifiedBy = actor || 'Admin';
+      item.verifiedAt = new Date();
+      item.timeline.push({
+        stage: 'ACCEPTED',
+        title: 'Admin Approved & Accepted',
+        description: `Approved by Administrator (${actor || 'Admin'}). Requisition pushed to Donor Network.`,
+        actor: actor || 'Admin'
       });
+
       await Notification.create({
         role: 'DONOR',
-        title: '📦 New Verified Need Opened',
-        message: `${reqDoc.itemName} (${reqDoc.quantity} units) approved by Admin for community funding.`
-      });
-    } 
-    else if (action === 'DONATE') {
-      reqDoc.status = 'FUNDED';
-      reqDoc.donorName = actor;
-      reqDoc.fundedAt = new Date();
-      if (photo) reqDoc.donationPhoto = photo;
-      reqDoc.timeline.push({
-        stage: 'FUNDED',
-        title: 'Donation Provided & Funded',
-        description: `Contributed by Donor (${actor}). Waiting for volunteer field transit.`,
-        actor
-      });
-      await Notification.create({
-        role: 'VOLUNTEER',
-        title: '🚚 Package Ready for Dispatch',
-        message: `${actor} funded ${reqDoc.itemName}. Volunteer pickup required!`
-      });
-      await Notification.create({
-        role: 'ADMIN',
-        title: '💰 Aid Funded by Donor',
-        message: `${actor} funded request #${reqDoc._id.toString().slice(-4)} (${reqDoc.itemName}).`
-      });
-    }
-    else if (action === 'ACCEPT_VOLUNTEER') {
-      reqDoc.status = 'DISPATCHED';
-      reqDoc.volunteerName = actor;
-      reqDoc.acceptedAt = new Date();
-      reqDoc.pickupLocation = location || 'Regional Depot';
-      if (photo) reqDoc.dispatchPhoto = photo;
-      reqDoc.timeline.push({
-        stage: 'DISPATCHED',
-        title: 'Volunteer Accepted & In Transit',
-        description: `Field transit accepted by ${actor}. Pickup scheduled at ${reqDoc.pickupLocation}.`,
-        actor
+        title: '📦 New Approved Aid Available',
+        message: `Admin accepted ${item.quantity}x ${item.itemName}. Donors can now accept and provide supplies!`
       });
       await Notification.create({
         role: 'RECEIVER',
-        title: '🚗 Volunteer on the Way',
-        message: `${actor} accepted your aid delivery from ${reqDoc.pickupLocation}.`
+        title: '✅ Requisition Approved',
+        message: `Your request for ${item.itemName} was approved by Admin and is visible to Donors.`
       });
     }
-    else if (action === 'COMPLETE') {
-      reqDoc.status = 'COMPLETED';
-      reqDoc.completedAt = new Date();
-      reqDoc.reviewStars = req.body.stars || 5;
-      reqDoc.reviewComment = req.body.comment || 'Successfully delivered';
-      reqDoc.timeline.push({
-        stage: 'COMPLETED',
-        title: 'Handover Completed & Verified',
-        description: `Aid handed over to recipient. Verified feedback: "${reqDoc.reviewComment}" (${reqDoc.reviewStars}★)`,
-        actor
+    else if (action === 'DONOR_ACCEPT' || action === 'DONATE') {
+      item.status = 'FUNDED';
+      item.donorName = actor || 'Donor';
+      item.donationType = donationType || 'Supplies / Cloth';
+      item.fundedAt = new Date();
+      if (photo) item.donationPhoto = photo;
+      item.timeline.push({
+        stage: 'FUNDED',
+        title: 'Donor Accepted & Provided Supplies',
+        description: `Accepted by ${actor || 'Donor'} (${item.donationType}). Assigned to Volunteer fleet for pickup.`,
+        actor: actor || 'Donor'
+      });
+
+      await Notification.create({
+        role: 'VOLUNTEER',
+        title: '🚚 Dispatch Ready: Pickup Required',
+        message: `${actor || 'Donor'} provided ${item.donationType} for ${item.itemName}. Volunteers please accept dispatch!`
       });
       await Notification.create({
         role: 'ADMIN',
-        title: '✅ Delivery Cycle Complete',
-        message: `${reqDoc.itemName} was successfully delivered and reviewed with ${reqDoc.reviewStars} stars.`
+        title: '💰 Donor Accepted Requisition',
+        message: `${actor || 'Donor'} accepted and provided supplies for #${item._id.toString().slice(-5)}.`
+      });
+    }
+    else if (action === 'VOLUNTEER_ACCEPT' || action === 'ACCEPT_VOLUNTEER') {
+      item.status = 'DISPATCHED';
+      item.volunteerName = actor || 'Volunteer';
+      item.acceptedAt = new Date();
+      item.pickupLocation = location || 'Regional Depot';
+      if (photo) item.dispatchPhoto = photo;
+      item.timeline.push({
+        stage: 'DISPATCHED',
+        title: 'Volunteer Accepted & In Field Transit',
+        description: `Accepted by Volunteer (${actor}). Pickup from ${item.pickupLocation}. Heading to recipient.`,
+        actor: actor || 'Volunteer'
+      });
+
+      await Notification.create({
+        role: 'RECEIVER',
+        title: '🚗 Volunteer En Route',
+        message: `Volunteer ${actor} accepted your aid parcel from ${item.pickupLocation} and is on the way!`
+      });
+    }
+    else if (action === 'COMPLETE') {
+      item.status = 'COMPLETED';
+      item.completedAt = new Date();
+      item.reviewStars = stars || 5;
+      item.reviewComment = comment || 'Delivered successfully';
+      item.timeline.push({
+        stage: 'COMPLETED',
+        title: 'Delivered & Handover Confirmed',
+        description: `Received by recipient. Final review rating: ${item.reviewStars}★ ("${item.reviewComment}")`,
+        actor: actor || 'Field Staff'
+      });
+
+      await Notification.create({
+        role: 'ADMIN',
+        title: '🎉 Complete Pipeline Closed',
+        message: `${item.itemName} delivered safely. Rated ${item.reviewStars}★.`
       });
     }
 
-    await reqDoc.save();
-    res.json(reqDoc);
+    await item.save();
+    res.json(item);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Notifications API
 app.get('/api/notifications', async (req, res) => {
   try {
     const role = (req.query.role || 'ALL').toUpperCase();
@@ -245,6 +252,6 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/community_
 
 mongoose.connect(MONGO_URI)
   .then(() => {
-    app.listen(PORT, '0.0.0.0', () => console.log(`Backend live on http://localhost:${PORT}`));
+    app.listen(PORT, '0.0.0.0', () => console.log(`CommunityCare Live on http://localhost:${PORT}`));
   })
-  .catch(err => console.error("Mongo Error:", err));
+  .catch(err => console.error("DB error:", err));
