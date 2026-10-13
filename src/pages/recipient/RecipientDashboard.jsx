@@ -3,7 +3,16 @@ import AppLayout from '../../components/layout/AppLayout';
 import OrderTimeline from '../../components/common/OrderTimeline';
 import LiveRelayChat from '../admin/LiveRelayChat';
 import { api } from '../../services/api';
-import { PlusCircle, RefreshCw, AlertCircle, Star } from 'lucide-react';
+import { 
+  PlusCircle, 
+  RefreshCw, 
+  AlertCircle, 
+  Star, 
+  Clock, 
+  HeartHandshake, 
+  PackageCheck,
+  ShieldAlert
+} from 'lucide-react';
 
 export default function RecipientDashboard({ currentUser, onLogout }) {
   const [activeTab, setActiveTab] = useState('home');
@@ -63,59 +72,108 @@ export default function RecipientDashboard({ currentUser, onLogout }) {
     }
   };
 
+  const myRequests = requests.filter(r => r.recipientName === currentUser?.name || !r.recipientName);
+  const pendingCount = myRequests.filter(r => r.status === 'PENDING').length;
+  const transitCount = myRequests.filter(r => r.status === 'DISPATCHED' || r.status === 'FUNDED').length;
+  const deliveredCount = myRequests.filter(r => r.status === 'COMPLETED').length;
+
+  const receiverCards = [
+    { label: 'My Total Requests', count: myRequests.length, sub: 'Registered requisitions', icon: HeartHandshake, bg: 'bg-black text-white', border: 'border-slate-800' },
+    { label: 'Pending Audit', count: pendingCount, sub: 'Admin review queue', icon: Clock, bg: 'bg-amber-50 text-amber-800', border: 'border-amber-200' },
+    { label: 'En Route', count: transitCount, sub: 'Volunteer in transit', icon: ShieldAlert, bg: 'bg-blue-50 text-blue-800', border: 'border-blue-200' },
+    { label: 'Delivered Aid', count: deliveredCount, sub: 'Completed handovers', icon: PackageCheck, bg: 'bg-emerald-50 text-emerald-800', border: 'border-emerald-200' },
+  ];
+
   return (
     <AppLayout currentUser={currentUser} onLogout={onLogout} activeTab={activeTab} onSelectTab={setActiveTab}>
       {activeTab === 'home' && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
             <div>
-              <h2 className="text-lg font-black text-slate-900">My Requisition Pipeline</h2>
-              <p className="text-xs text-slate-400">Live aid requests tracked across the community supply chain</p>
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Receiver Aid Tracker</h1>
+              <p className="text-xs text-slate-500 font-medium">Monitor your relief requisitions and delivery timelines in real-time</p>
             </div>
-            <button onClick={fetchMyRequests} className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50">
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
-
-          {requests.length === 0 ? (
-            <div className="bg-white p-12 rounded-3xl border border-dashed border-slate-200 text-center">
-              <AlertCircle className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-              <p className="text-sm font-bold text-slate-700">No active requisitions yet</p>
+            <div className="flex gap-2">
               <button 
                 onClick={() => setActiveTab('new-request')}
-                className="mt-3 px-4 py-2 bg-black text-white font-bold text-xs rounded-xl shadow-xs"
+                className="px-4 py-2 bg-black text-white rounded-xl text-xs font-bold hover:bg-slate-800 shadow-xs flex items-center gap-1.5"
               >
-                Create First Requisition
+                <PlusCircle className="w-3.5 h-3.5" /> Request Aid
+              </button>
+              <button onClick={fetchMyRequests} className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50">
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               </button>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {requests.map(r => (
-                <div key={r._id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-bold text-sm text-slate-900">{r.itemName}</h3>
-                      <p className="text-xs text-slate-400">{r.quantity} units • Dest: {r.location}</p>
-                    </div>
-                    <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
-                      {r.status}
-                    </span>
+          </div>
+
+          {/* Receiver Stat Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            {receiverCards.map((c, i) => {
+              const Icon = c.icon;
+              return (
+                <div key={i} className={`p-4 rounded-2xl border ${c.border} ${c.bg} shadow-xs flex flex-col justify-between`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-bold uppercase tracking-wider opacity-80">{c.label}</span>
+                    <Icon className="w-4 h-4 opacity-75" />
                   </div>
+                  <div>
+                    <p className="text-2xl sm:text-3xl font-black tracking-tight">{c.count}</p>
+                    <p className="text-[10px] opacity-75 font-medium mt-0.5">{c.sub}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
 
-                  <OrderTimeline request={r} />
+          {/* Live My Requisitions Feed */}
+          <div className="bg-white rounded-3xl border border-slate-200 p-4 sm:p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <h2 className="text-sm sm:text-base font-bold text-slate-900">Active Aid Timelines</h2>
+              <span className="text-[10px] font-bold px-2.5 py-0.5 bg-slate-100 text-slate-700 rounded-full">
+                {myRequests.length} Tracked
+              </span>
+            </div>
 
-                  {r.status === 'COMPLETED' && (
-                    <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-900 flex items-center justify-between">
-                      <span className="font-semibold">Handover Verified</span>
-                      <span className="flex items-center gap-1 font-bold">
-                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> {r.reviewStars} / 5
+            {myRequests.length === 0 ? (
+              <div className="py-12 text-center text-xs text-slate-400">
+                <AlertCircle className="w-7 h-7 mx-auto mb-2 text-slate-300" />
+                You haven't posted any relief requisitions yet.
+                <div className="mt-3">
+                  <button onClick={() => setActiveTab('new-request')} className="px-4 py-2 bg-black text-white rounded-xl text-xs font-bold">
+                    Create Aid Requisition
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {myRequests.map(r => (
+                  <div key={r._id} className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-bold text-sm text-slate-900">{r.itemName}</h3>
+                        <p className="text-xs text-slate-400">{r.quantity} units • Dest: {r.location}</p>
+                      </div>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-700">
+                        {r.status}
                       </span>
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+
+                    <OrderTimeline request={r} />
+
+                    {r.status === 'COMPLETED' && (
+                      <div className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-900 flex items-center justify-between">
+                        <span className="font-semibold">Delivered & Verified</span>
+                        <span className="flex items-center gap-1 font-bold">
+                          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> {r.reviewStars} / 5
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -158,7 +216,7 @@ export default function RecipientDashboard({ currentUser, onLogout }) {
         <div className="space-y-4">
           <h2 className="text-lg font-black text-slate-900 pb-2 border-b border-slate-200">Requisition Timelines</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {requests.map(r => (
+            {myRequests.map(r => (
               <div key={r._id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
                 <h3 className="font-bold text-sm text-slate-900">{r.itemName}</h3>
                 <OrderTimeline request={r} />

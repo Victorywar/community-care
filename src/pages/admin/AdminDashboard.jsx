@@ -1,82 +1,141 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Clock, Truck, CheckCircle, Heart, RefreshCw, AlertCircle } from 'lucide-react';
 import { api } from '../../services/api';
+import OrderTimeline from '../../components/common/OrderTimeline';
+import { 
+  Clock, 
+  CheckCircle2, 
+  Truck, 
+  Heart, 
+  RefreshCw, 
+  AlertCircle, 
+  ArrowUpRight,
+  ShieldCheck,
+  TrendingUp,
+  PackageCheck
+} from 'lucide-react';
 
 export default function AdminDashboard({ onNavigate }) {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const loadData = async () => {
+  const fetchLive = async () => {
     try {
       setLoading(true);
       const data = await api.getRequests();
       setRequests(Array.isArray(data) ? data : []);
-    } catch (err) {
+    } catch {
       setRequests([]);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { fetchLive(); }, []);
 
-  const pendingCount = requests.filter(r => r.status === 'PENDING').length;
-  const verifiedCount = requests.filter(r => r.status === 'VERIFIED' || r.status === 'FUNDED').length;
-  const transitCount = requests.filter(r => r.status === 'DISPATCHED' || r.status === 'ASSIGNED').length;
-  const completedCount = requests.filter(r => r.status === 'COMPLETED').length;
+  const total = requests.length;
+  const pending = requests.filter(r => r.status === 'PENDING').length;
+  const verified = requests.filter(r => r.status === 'VERIFIED').length;
+  const inTransit = requests.filter(r => r.status === 'DISPATCHED' || r.status === 'FUNDED').length;
+  const completed = requests.filter(r => r.status === 'COMPLETED').length;
+
+  const cards = [
+    { label: 'Total Aid Requests', count: total, sub: 'All-time pipeline', icon: TrendingUp, bg: 'bg-black text-white', border: 'border-slate-800' },
+    { label: 'Awaiting Audit', count: pending, sub: 'Needs admin sign-off', icon: Clock, bg: 'bg-amber-50 text-amber-700', border: 'border-amber-200' },
+    { label: 'Ready for Donors', count: verified, sub: 'Verified by Admin', icon: Heart, bg: 'bg-purple-50 text-purple-700', border: 'border-purple-200' },
+    { label: 'Active in Transit', count: inTransit, sub: 'Field fleet moving', icon: Truck, bg: 'bg-blue-50 text-blue-700', border: 'border-blue-200' },
+    { label: 'Aid Delivered', count: completed, sub: 'Verified & Reviewed', icon: CheckCircle2, bg: 'bg-emerald-50 text-emerald-700', border: 'border-emerald-200' },
+  ];
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      {/* Top Banner */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
         <div>
-          <h2 className="text-base font-bold text-slate-900">Admin Live Control</h2>
-          <p className="text-[11px] text-slate-400">Verify receiver requests & coordinate fleet</p>
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Admin Command Center</h1>
+          <p className="text-xs text-slate-500 font-medium">Real-time aid registry, fleet telemetry & verification pipeline</p>
         </div>
-        <button onClick={loadData} className="p-2 bg-white border border-slate-200 rounded-xl text-slate-600">
+        <button 
+          onClick={fetchLive}
+          className="self-start sm:self-auto inline-flex items-center gap-2 px-3.5 py-2 bg-black text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition"
+        >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <span>Refresh Data</span>
         </button>
       </div>
 
-      {/* Mobile 2x2 Grid Stats */}
-      <div className="grid grid-cols-2 gap-2.5">
-        <div className="bg-white p-3.5 rounded-2xl border border-amber-200 bg-amber-50/40">
-          <span className="text-[11px] font-semibold text-amber-700">Need Verification</span>
-          <p className="text-2xl font-black text-amber-900 mt-1">{pendingCount}</p>
-        </div>
-        <div className="bg-white p-3.5 rounded-2xl border border-purple-200 bg-purple-50/40">
-          <span className="text-[11px] font-semibold text-purple-700">Awaiting Donor</span>
-          <p className="text-2xl font-black text-purple-900 mt-1">{verifiedCount}</p>
-        </div>
-        <div className="bg-white p-3.5 rounded-2xl border border-blue-200 bg-blue-50/40">
-          <span className="text-[11px] font-semibold text-blue-700">In Transit</span>
-          <p className="text-2xl font-black text-blue-900 mt-1">{transitCount}</p>
-        </div>
-        <div className="bg-white p-3.5 rounded-2xl border border-emerald-200 bg-emerald-50/40">
-          <span className="text-[11px] font-semibold text-emerald-700">Completed</span>
-          <p className="text-2xl font-black text-emerald-900 mt-1">{completedCount}</p>
-        </div>
+      {/* Analytics Metric Cards Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+        {cards.map((c, i) => {
+          const Icon = c.icon;
+          return (
+            <div key={i} className={`p-4 rounded-2xl border ${c.border} ${c.bg} shadow-xs flex flex-col justify-between transition-transform active:scale-95`}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold opacity-80 uppercase tracking-wider">{c.label}</span>
+                <Icon className="w-4 h-4 opacity-75" />
+              </div>
+              <div>
+                <p className="text-2xl sm:text-3xl font-black tracking-tight">{c.count}</p>
+                <p className="text-[10px] opacity-75 font-medium mt-0.5">{c.sub}</p>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Live Raw Feed */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 space-y-3">
-        <h3 className="font-bold text-xs uppercase tracking-wider text-slate-400">Incoming Workflow Pipeline</h3>
+      {/* Quick Action Navigator Bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <button onClick={() => onNavigate && onNavigate('requests')} className="p-3 bg-white border border-slate-200 rounded-xl text-left hover:border-black transition">
+          <p className="font-bold text-xs text-slate-900 flex items-center justify-between">Verify Needs <ArrowUpRight className="w-3.5 h-3.5 text-slate-400" /></p>
+          <p className="text-[10px] text-slate-400 mt-0.5">{pending} items pending</p>
+        </button>
+        <button onClick={() => onNavigate && onNavigate('donations')} className="p-3 bg-white border border-slate-200 rounded-xl text-left hover:border-black transition">
+          <p className="font-bold text-xs text-slate-900 flex items-center justify-between">Donation Ledger <ArrowUpRight className="w-3.5 h-3.5 text-slate-400" /></p>
+          <p className="text-[10px] text-slate-400 mt-0.5">Track contributions</p>
+        </button>
+        <button onClick={() => onNavigate && onNavigate('dispatch')} className="p-3 bg-white border border-slate-200 rounded-xl text-left hover:border-black transition">
+          <p className="font-bold text-xs text-slate-900 flex items-center justify-between">Field Fleet <ArrowUpRight className="w-3.5 h-3.5 text-slate-400" /></p>
+          <p className="text-[10px] text-slate-400 mt-0.5">{inTransit} active runs</p>
+        </button>
+        <button onClick={() => onNavigate && onNavigate('receipts')} className="p-3 bg-white border border-slate-200 rounded-xl text-left hover:border-black transition">
+          <p className="font-bold text-xs text-slate-900 flex items-center justify-between">Digital Receipts <ArrowUpRight className="w-3.5 h-3.5 text-slate-400" /></p>
+          <p className="text-[10px] text-slate-400 mt-0.5">{completed} signed vouchers</p>
+        </button>
+      </div>
+
+      {/* Live Pipeline Feed with Visual Timelines */}
+      <div className="bg-white rounded-3xl border border-slate-200 p-4 sm:p-6 shadow-xs space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div>
+            <h2 className="text-sm sm:text-base font-bold text-slate-900">Live Active Requisition Pipeline</h2>
+            <p className="text-[11px] text-slate-400">Chronological feed of items progressing through community stages</p>
+          </div>
+          <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-100 rounded-full text-slate-600">
+            {requests.length} items logged
+          </span>
+        </div>
+
         {requests.length === 0 ? (
-          <div className="py-8 text-center text-xs text-slate-400">
-            <AlertCircle className="w-6 h-6 mx-auto mb-2 text-slate-300" />
-            No active records in MongoDB.
+          <div className="py-12 text-center text-slate-400 text-xs">
+            <AlertCircle className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+            No aid requisitions recorded in the database yet.
           </div>
         ) : (
-          requests.slice(0, 5).map((r) => (
-            <div key={r._id} className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-              <div>
-                <p className="font-bold text-xs text-slate-800">{r.itemName || r.title}</p>
-                <p className="text-[10px] text-slate-400">{r.recipientName || 'Receiver'} • {r.quantity || 1} units</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {requests.slice(0, 6).map(r => (
+              <div key={r._id} className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-bold text-sm text-slate-900">{r.itemName}</h3>
+                    <p className="text-[11px] text-slate-400">{r.quantity} units • Recipient: {r.recipientName}</p>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-700">
+                    {r.status}
+                  </span>
+                </div>
+                <OrderTimeline request={r} />
               </div>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white border border-slate-200">
-                {r.status}
-              </span>
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </div>
     </div>
