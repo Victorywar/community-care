@@ -1,138 +1,41 @@
-import React, { useState, useEffect } from 'react';
-import { api } from '../../services/api';
-import { useData } from '../../context/DataContext';
-import { 
-  ShieldCheck, 
-  Clock, 
-  CheckCircle2, 
-  MapPin, 
-  Phone, 
-  Truck, 
-  AlertCircle 
-} from 'lucide-react';
+﻿import React from 'react';
+import { Truck, MapPin, Phone, Shield } from 'lucide-react';
 
 export default function VolunteerDispatch() {
-  const { requests = [], updateRequestStatus, refreshAllData } = useData();
-  const [volunteers, setVolunteers] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const res = await api.getMembers();
-      if (Array.isArray(res)) {
-        setVolunteers(res.filter(m => m.role === 'VOLUNTEER'));
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const approvedVolunteers = volunteers.filter(v => v.isApproved);
-  const pendingRequests = requests.filter(r => r.status === 'PENDING');
-
-  const handleAssign = async (requestId, volunteerName) => {
-    if (!volunteerName) return;
-    await updateRequestStatus(requestId, 'IN_PROGRESS', volunteerName);
-    await refreshAllData();
-  };
+  const volunteers = [
+    { id: 1, name: 'Karthik Raja', vehicle: 'Van (TN 09 BX 4412)', route: 'Zone 4 -> North Camp', phone: '+91 98401 23456', status: 'Active Transit' },
+    { id: 2, name: 'Sanjay V', vehicle: 'Motorbike', route: 'Urban Sector Hospital', phone: '+91 98402 78901', status: 'Standby' }
+  ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Volunteer Dispatch Control</h1>
-        <p className="text-xs text-slate-500 mt-1">Assign unallocated aid requests directly to verified on-ground personnel</p>
+        <h2 className="text-lg sm:text-xl font-black text-slate-900">Volunteer Field Fleet</h2>
+        <p className="text-xs text-slate-400">Live operational field dispatches and driver contact relay</p>
       </div>
 
-      {/* Available Authorized Volunteers */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-xs space-y-4">
-        <h2 className="text-sm font-black text-slate-900 flex items-center gap-2">
-          <ShieldCheck size={16} className="text-emerald-500" />
-          <span>Active Approved Field Personnel ({approvedVolunteers.length})</span>
-        </h2>
-
-        {loading ? (
-          <p className="text-xs text-slate-400 py-4 text-center">Checking database roster...</p>
-        ) : approvedVolunteers.length === 0 ? (
-          <div className="p-6 border border-dashed border-slate-200 rounded-2xl text-center text-xs text-slate-400">
-            No approved volunteers yet. Please approve registered applicants in the <strong>Community Members</strong> tab first.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {approvedVolunteers.map((vol) => (
-              <div key={vol._id} className="p-4 rounded-2xl border border-slate-100 bg-slate-50/60 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-900 text-xs">{vol.name}</span>
-                  <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-extrabold text-[9px] rounded-full border border-emerald-200">
-                    AUTHORIZED
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-500 flex items-center gap-1.5">
-                  <MapPin size={12} className="text-slate-400 shrink-0" /> {vol.address || 'Field Base'}
-                </p>
-                <p className="text-[11px] text-slate-500 flex items-center gap-1.5">
-                  <Phone size={12} className="text-slate-400 shrink-0" /> {vol.phone || 'No direct phone'}
-                </p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+        {volunteers.map((v) => (
+          <div key={v.id} className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="font-bold text-slate-900 text-sm sm:text-base">{v.name}</h3>
+                <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5"><Shield className="w-3.5 h-3.5 text-blue-500" /> {v.vehicle}</p>
               </div>
-            ))}
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${v.status === 'Active Transit' ? 'bg-blue-50 text-blue-600 border border-blue-200' : 'bg-slate-100 text-slate-600'}`}>
+                {v.status}
+              </span>
+            </div>
+            <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs text-slate-600 flex items-center gap-1.5">
+              <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <span className="truncate">{v.route}</span>
+            </div>
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+              <span className="text-slate-500 font-mono">{v.phone}</span>
+              <button className="px-3 py-1.5 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800">Dispatch Ping</button>
+            </div>
           </div>
-        )}
-      </div>
-
-      {/* Direct Assignment Queue */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-xs space-y-4">
-        <h2 className="text-sm font-black text-slate-900 flex items-center gap-2">
-          <Truck size={16} className="text-blue-600" />
-          <span>Unassigned Help Tickets Needing Dispatch ({pendingRequests.length})</span>
-        </h2>
-
-        {pendingRequests.length === 0 ? (
-          <div className="p-6 border border-dashed border-slate-200 rounded-2xl text-center text-xs text-slate-400">
-            All tickets are assigned or fulfilled. No pending dispatches at this moment.
-          </div>
-        ) : (
-          <div className="divide-y divide-slate-100">
-            {pendingRequests.map((req) => (
-              <div key={req.id} className="py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs">
-                <div>
-                  <p className="font-bold text-slate-900 text-sm">{req.title}</p>
-                  <p className="text-slate-500 text-[11px] mt-0.5">
-                    Beneficiary: <strong>{req.recipientName}</strong> • {req.location}
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <select
-                    id={`select-${req.id}`}
-                    className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    defaultValue=""
-                  >
-                    <option value="" disabled>Select Volunteer</option>
-                    {approvedVolunteers.map(v => (
-                      <option key={v._id} value={v.name}>{v.name}</option>
-                    ))}
-                  </select>
-
-                  <button
-                    onClick={() => {
-                      const select = document.getElementById(`select-${req.id}`);
-                      handleAssign(req.id, select.value);
-                    }}
-                    className="px-4 py-2 bg-[#080d1d] hover:bg-slate-800 text-white font-bold rounded-xl text-xs transition-all cursor-pointer shadow-xs"
-                  >
-                    Dispatch Unit
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        ))}
       </div>
     </div>
   );

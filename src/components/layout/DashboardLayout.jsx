@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import AdminDashboard from '../../pages/admin/AdminDashboard';
@@ -35,21 +35,19 @@ export default function DashboardLayout({ currentUser, onLogout }) {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#f8faff] relative overflow-x-hidden">
-      {/* Mobile Drawer Backdrop */}
+    <div className="flex min-h-screen bg-[#f8faff] text-slate-800 relative overflow-x-hidden">
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden transition-opacity"
+          className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-40 md:hidden transition-opacity"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      {/* Sidebar Component */}
       <Sidebar 
         activeTab={activeTab} 
         onSelectTab={(tab) => {
           setActiveTab(tab);
-          setSidebarOpen(false); // Auto-close drawer on mobile when clicking a tab
+          setSidebarOpen(false);
         }} 
         currentUser={currentUser} 
         onLogout={onLogout}
@@ -57,7 +55,6 @@ export default function DashboardLayout({ currentUser, onLogout }) {
         onClose={() => setSidebarOpen(false)}
       />
 
-      {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 w-full">
         <Header 
           currentUser={currentUser} 
@@ -65,7 +62,7 @@ export default function DashboardLayout({ currentUser, onLogout }) {
           onToggleSidebar={() => setSidebarOpen(prev => !prev)}
         />
         
-        <main className="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-10">
           {renderActiveScreen()}
         </main>
       </div>
