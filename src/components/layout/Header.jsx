@@ -16,7 +16,7 @@ export default function Header({ currentUser, onLogout, onToggleSidebar, activeT
 
   useEffect(() => {
     fetchNotifs();
-    const interval = setInterval(fetchNotifs, 8000); // Live poll for real-time notifications
+    const interval = setInterval(fetchNotifs, 8000);
     return () => clearInterval(interval);
   }, [userProfile?.role]);
 
@@ -41,17 +41,16 @@ export default function Header({ currentUser, onLogout, onToggleSidebar, activeT
             </button>
           )}
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md">
+            <div className="w-9 h-9 rounded-xl bg-black flex items-center justify-center text-white shadow-md border border-slate-800">
               <HeartHandshake className="w-5 h-5" />
             </div>
             <div>
               <h1 className="font-black text-sm sm:text-base text-slate-900 leading-tight">CommunityCare</h1>
-              <p className="text-[10px] uppercase font-bold tracking-wider text-blue-600">{activeTitle || userProfile?.role || 'Platform'}</p>
+              <p className="text-[10px] uppercase font-bold tracking-wider text-slate-600">{activeTitle || userProfile?.role || 'Platform'}</p>
             </div>
           </div>
         </div>
 
-        {/* Action Controls */}
         <div className="flex items-center gap-2 sm:gap-3 relative">
           {/* Notification Button */}
           <div className="relative">
@@ -68,15 +67,15 @@ export default function Header({ currentUser, onLogout, onToggleSidebar, activeT
               )}
             </button>
 
-            {/* Notification Drawer / Tray */}
+            {/* Notification Drawer */}
             {showNotifTray && (
               <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 p-3 z-50 text-xs">
                 <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                   <div className="flex items-center gap-1.5">
                     <span className="font-bold text-slate-900">Notifications</span>
-                    {unreadCount > 0 && <span className="bg-blue-100 text-blue-700 font-bold px-1.5 py-0.5 rounded-full text-[10px]">{unreadCount} new</span>}
+                    {unreadCount > 0 && <span className="bg-black text-white font-bold px-1.5 py-0.5 rounded-full text-[10px]">{unreadCount} new</span>}
                   </div>
-                  <button onClick={handleMarkAllRead} className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                  <button onClick={handleMarkAllRead} className="text-[11px] font-bold text-slate-600 hover:text-black flex items-center gap-1">
                     <CheckCheck className="w-3.5 h-3.5" /> Mark all read
                   </button>
                 </div>
@@ -85,7 +84,7 @@ export default function Header({ currentUser, onLogout, onToggleSidebar, activeT
                     <div className="py-8 text-center text-slate-400 text-xs">No notifications yet.</div>
                   ) : (
                     notifications.map((n) => (
-                      <div key={n._id} className={`py-2.5 px-2 rounded-xl ${!n.read ? 'bg-blue-50/50' : ''}`}>
+                      <div key={n._id} className={`py-2.5 px-2 rounded-xl ${!n.read ? 'bg-slate-100' : ''}`}>
                         <p className="font-bold text-slate-800">{n.title}</p>
                         <p className="text-slate-500 mt-0.5 leading-snug">{n.message}</p>
                         <span className="text-[9px] text-slate-400 mt-1 block">{new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
@@ -97,13 +96,13 @@ export default function Header({ currentUser, onLogout, onToggleSidebar, activeT
             )}
           </div>
 
-          {/* User Profile DP & Settings Toggle */}
+          {/* User Profile DP & Settings Toggle - Clean Black */}
           <button 
             onClick={() => setShowProfileModal(true)}
             className="flex items-center gap-2 p-1 pl-1.5 pr-2 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-slate-100 transition"
             title="Profile & DP Settings"
           >
-            <div className="w-7 h-7 rounded-xl overflow-hidden bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+            <div className="w-7 h-7 rounded-xl overflow-hidden bg-black text-white flex items-center justify-center font-bold text-xs shadow-xs border border-slate-800">
               {userProfile?.avatar ? (
                 <img src={userProfile.avatar} alt="DP" className="w-full h-full object-cover" />
               ) : (
@@ -117,14 +116,12 @@ export default function Header({ currentUser, onLogout, onToggleSidebar, activeT
             <Settings className="w-3.5 h-3.5 text-slate-400 hidden sm:block ml-0.5" />
           </button>
 
-          {/* Logout */}
           <button onClick={onLogout} className="p-2 rounded-xl text-rose-500 hover:bg-rose-50 transition" title="Logout">
             <LogOut className="w-5 h-5" />
           </button>
         </div>
       </header>
 
-      {/* Profile & DP Edit Modal */}
       <ProfileSettingsModal 
         isOpen={showProfileModal}
         onClose={() => setShowProfileModal(false)}
