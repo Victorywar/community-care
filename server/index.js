@@ -7,6 +7,7 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '25mb' }));
 
+// Request Schema
 const RequestSchema = new mongoose.Schema({
   itemName: { type: String, required: true },
   quantity: { type: Number, default: 1 },
@@ -14,33 +15,15 @@ const RequestSchema = new mongoose.Schema({
   location: { type: String, required: true },
   recipientName: { type: String, required: true },
   recipientPhoto: { type: String, default: '' },
-  
-  // Admin Approval
   verifiedBy: { type: String, default: '' },
-  verifiedAt: { type: Date },
-
-  // Donor Acceptance & Pledge
   donorName: { type: String, default: '' },
-  donationType: { type: String, default: 'Supplies' }, // e.g. Cloth, Food, Medical
-  donationPhoto: { type: String, default: '' },
-  fundedAt: { type: Date },
-
-  // Volunteer Dispatch Acceptance
   volunteerName: { type: String, default: '' },
-  acceptedAt: { type: Date },
-  pickupLocation: { type: String, default: '' },
+  donationType: { type: String, default: 'Supplies' },
+  donationPhoto: { type: String, default: '' },
   dispatchPhoto: { type: String, default: '' },
-
-  // Final Delivery & Review
-  completedAt: { type: Date },
   reviewStars: { type: Number, default: 5 },
   reviewComment: { type: String, default: '' },
-
-  status: { 
-    type: String, 
-    enum: ['PENDING', 'ACCEPTED', 'VERIFIED', 'FUNDED', 'DISPATCHED', 'COMPLETED'], 
-    default: 'PENDING' 
-  },
+  status: { type: String, default: 'PENDING' },
   timeline: [{
     stage: String,
     title: String,
@@ -50,15 +33,7 @@ const RequestSchema = new mongoose.Schema({
   }]
 }, { timestamps: true });
 
-const UserSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  role: { type: String, default: 'RECIPIENT' },
-  phone: { type: String, default: '' },
-  avatar: { type: String, default: '' },
-  address: { type: String, default: '' }
-}, { timestamps: true });
-
+// Notification Schema
 const NotificationSchema = new mongoose.Schema({
   role: { type: String, default: 'ALL' },
   title: { type: String, required: true },
@@ -67,42 +42,38 @@ const NotificationSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const Request = mongoose.models.Request || mongoose.model('Request', RequestSchema);
-const User = mongoose.models.User || mongoose.model('User', UserSchema);
 const Notification = mongoose.models.Notification || mongoose.model('Notification', NotificationSchema);
 
-// Profile APIs
-app.get('/api/auth/profile/:email', async (req, res) => {
+// --- Notification Endpoints ---
+app.get('/api/notifications', async (req, res) => {
   try {
-    const user = await User.findOne({ email: req.params.email });
-    res.json(user || {});
-  } catch (err) { res.status(500).json({ error: err.message }); }
+    const role = (req.query.role || 'ALL').toUpperCase();
+    const list = await Notification.find({
+      $or: [{ role: 'ALL' }, { role }]
+    }).sort({ createdAt: -1 }).limit(30);
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.post('/api/auth/profile', async (req, res) => {
+app.patch('/api/notifications/mark-read', async (req, res) => {
   try {
-    const { email, name, phone, address, avatar, role } = req.body;
-    const user = await User.findOneAndUpdate(
-      { email },
-      { name, phone, address, avatar, ...(role && { role }) },
-      { new: true, upsert: true }
-    );
-    res.json(user);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+    await Notification.updateMany({ read: false }, { $set: { read: true } });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.get('/api/users', async (req, res) => {
-  try {
-    const users = await User.find().select('-password').sort({ createdAt: -1 });
-    res.json(users);
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// Requests APIs
+// --- Request Endpoints ---
 app.get('/api/requests', async (req, res) => {
   try {
-    const list = await Request.find().sort({ createdAt: -1 });
-    res.json(list);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+    const data = await Request.find().sort({ createdAt: -1 });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.post('/api/requests', async (req, res) => {
@@ -126,132 +97,104 @@ app.post('/api/requests', async (req, res) => {
 
     await Notification.create({
       role: 'ADMIN',
-      title: '🚨 Pending Requisition Needs Approval',
-      message: `${recipientName} submitted request for ${quantity}x ${itemName} at ${location}. Approval required!`
+      title: '🚨 New Requisition Needs Approval',
+      message: `${recipientName} requested ${quantity}x ${itemName} at ${location}.`
     });
 
     res.status(201).json(newReq);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// Step-by-step Timeline & Accept Action
 app.patch('/api/requests/:id/timeline-step', async (req, res) => {
   try {
     const { action, actor, donationType, photo, location, stars, comment } = req.body;
-    const item = await Request.findById(req.params.id);
-    if (!item) return res.status(404).json({ error: 'Request not found' });
+    const reqDoc = await Request.findById(req.params.id);
+    if (!reqDoc) return res.status(404).json({ error: 'Request not found' });
 
     if (action === 'ADMIN_APPROVE' || action === 'VERIFY') {
-      item.status = 'ACCEPTED';
-      item.verifiedBy = actor || 'Admin';
-      item.verifiedAt = new Date();
-      item.timeline.push({
+      reqDoc.status = 'ACCEPTED';
+      reqDoc.verifiedBy = actor || 'Admin Control';
+      reqDoc.timeline.push({
         stage: 'ACCEPTED',
-        title: 'Admin Approved & Accepted',
-        description: `Approved by Administrator (${actor || 'Admin'}). Requisition pushed to Donor Network.`,
-        actor: actor || 'Admin'
+        title: 'Admin Accepted & Approved',
+        description: `Verified by ${actor || 'Admin Control'}`,
+        actor: actor || 'Admin Control'
       });
 
       await Notification.create({
         role: 'DONOR',
         title: '📦 New Approved Aid Available',
-        message: `Admin accepted ${item.quantity}x ${item.itemName}. Donors can now accept and provide supplies!`
+        message: `Admin approved ${reqDoc.quantity}x ${reqDoc.itemName} for ${reqDoc.recipientName}.`
       });
       await Notification.create({
         role: 'RECEIVER',
         title: '✅ Requisition Approved',
-        message: `Your request for ${item.itemName} was approved by Admin and is visible to Donors.`
+        message: `Your request for ${reqDoc.itemName} was approved and opened to donors.`
       });
-    }
-    else if (action === 'DONOR_ACCEPT' || action === 'DONATE') {
-      item.status = 'FUNDED';
-      item.donorName = actor || 'Donor';
-      item.donationType = donationType || 'Supplies / Cloth';
-      item.fundedAt = new Date();
-      if (photo) item.donationPhoto = photo;
-      item.timeline.push({
+    } else if (action === 'DONOR_ACCEPT' || action === 'DONATE') {
+      reqDoc.status = 'FUNDED';
+      reqDoc.donorName = actor || 'Donor';
+      reqDoc.donationType = donationType || 'Supplies';
+      if (photo) reqDoc.donationPhoto = photo;
+      reqDoc.timeline.push({
         stage: 'FUNDED',
-        title: 'Donor Accepted & Provided Supplies',
-        description: `Accepted by ${actor || 'Donor'} (${item.donationType}). Assigned to Volunteer fleet for pickup.`,
-        actor: actor || 'Donor'
+        title: 'Donor Accepted & Supplied',
+        description: `Supplied by ${actor} (${reqDoc.donationType})`,
+        actor
       });
 
       await Notification.create({
         role: 'VOLUNTEER',
-        title: '🚚 Dispatch Ready: Pickup Required',
-        message: `${actor || 'Donor'} provided ${item.donationType} for ${item.itemName}. Volunteers please accept dispatch!`
+        title: '🚚 Dispatch Ready for Pickup',
+        message: `${actor} funded ${reqDoc.itemName}. Assigned for field transit.`
       });
-      await Notification.create({
-        role: 'ADMIN',
-        title: '💰 Donor Accepted Requisition',
-        message: `${actor || 'Donor'} accepted and provided supplies for #${item._id.toString().slice(-5)}.`
-      });
-    }
-    else if (action === 'VOLUNTEER_ACCEPT' || action === 'ACCEPT_VOLUNTEER') {
-      item.status = 'DISPATCHED';
-      item.volunteerName = actor || 'Volunteer';
-      item.acceptedAt = new Date();
-      item.pickupLocation = location || 'Regional Depot';
-      if (photo) item.dispatchPhoto = photo;
-      item.timeline.push({
+    } else if (action === 'VOLUNTEER_ACCEPT' || action === 'ACCEPT_VOLUNTEER') {
+      reqDoc.status = 'DISPATCHED';
+      reqDoc.volunteerName = actor || 'Volunteer';
+      reqDoc.timeline.push({
         stage: 'DISPATCHED',
-        title: 'Volunteer Accepted & In Field Transit',
-        description: `Accepted by Volunteer (${actor}). Pickup from ${item.pickupLocation}. Heading to recipient.`,
-        actor: actor || 'Volunteer'
+        title: 'Volunteer Accepted Transit',
+        description: `In transit by ${actor}`,
+        actor
       });
 
       await Notification.create({
         role: 'RECEIVER',
-        title: '🚗 Volunteer En Route',
-        message: `Volunteer ${actor} accepted your aid parcel from ${item.pickupLocation} and is on the way!`
+        title: '🚗 Volunteer on the Way',
+        message: `${actor} accepted delivery of ${reqDoc.itemName} and is in transit.`
       });
-    }
-    else if (action === 'COMPLETE') {
-      item.status = 'COMPLETED';
-      item.completedAt = new Date();
-      item.reviewStars = stars || 5;
-      item.reviewComment = comment || 'Delivered successfully';
-      item.timeline.push({
+    } else if (action === 'COMPLETE') {
+      reqDoc.status = 'COMPLETED';
+      reqDoc.reviewStars = stars || 5;
+      reqDoc.reviewComment = comment || 'Delivered safely';
+      reqDoc.timeline.push({
         stage: 'COMPLETED',
-        title: 'Delivered & Handover Confirmed',
-        description: `Received by recipient. Final review rating: ${item.reviewStars}★ ("${item.reviewComment}")`,
-        actor: actor || 'Field Staff'
+        title: 'Handover Verified & Reviewed',
+        description: `Signed off with ${reqDoc.reviewStars}★ ("${reqDoc.reviewComment}")`,
+        actor: actor || 'Volunteer'
       });
 
       await Notification.create({
         role: 'ADMIN',
         title: '🎉 Complete Pipeline Closed',
-        message: `${item.itemName} delivered safely. Rated ${item.reviewStars}★.`
+        message: `${reqDoc.itemName} delivered safely and reviewed with ${reqDoc.reviewStars}★.`
       });
     }
 
-    await item.save();
-    res.json(item);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+    await reqDoc.save();
+    res.json(reqDoc);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.get('/api/notifications', async (req, res) => {
-  try {
-    const role = (req.query.role || 'ALL').toUpperCase();
-    const list = await Notification.find({
-      $or: [{ role: 'ALL' }, { role }]
-    }).sort({ createdAt: -1 }).limit(30);
-    res.json(list);
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.patch('/api/notifications/mark-read', async (req, res) => {
-  try {
-    await Notification.updateMany({ read: false }, { $set: { read: true } });
-    res.json({ success: true });
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-const PORT = process.env.PORT || 5000;
+const PORT = 5000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/community_care';
 
-mongoose.connect(MONGO_URI)
-  .then(() => {
-    app.listen(PORT, '0.0.0.0', () => console.log(`CommunityCare Live on http://localhost:${PORT}`));
-  })
-  .catch(err => console.error("DB error:", err));
+mongoose.connect(MONGO_URI).then(() => {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Backend Server READY on port ${PORT}`);
+  });
+}).catch(e => console.error("Mongo Error:", e));
