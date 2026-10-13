@@ -28,21 +28,9 @@ function SplashScreen() {
     <div className="fixed inset-0 w-full h-full bg-white flex flex-col justify-between items-center px-6 py-8 select-none z-50">
       <div className="h-4"></div>
       <div className="flex flex-col items-center max-w-xs w-full">
-        <div className="w-32 h-32 rounded-full bg-white border-2 border-slate-200/80 shadow-lg shadow-slate-100 flex items-center justify-center p-3 mb-6">
-          <svg viewBox="0 0 100 100" className="w-full h-full" fill="none">
-            <circle cx="50" cy="50" r="46" stroke="#0f172a" strokeWidth="2.5" />
-            <circle cx="50" cy="50" r="41" stroke="#f59e0b" strokeWidth="1.2" strokeDasharray="3 3" />
-            <path
-              d="M50 72 C47 69, 22 47, 22 30 C22 19, 30 12, 40 12 C46.5 12, 48.5 15, 50 18 C51.5 15, 53.5 12, 60 12 C70 12, 78 19, 78 30 C78 47, 53 69, 50 72 Z"
-              fill="none"
-              stroke="#0f172a"
-              strokeWidth="3.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </div>
-        <h1 className="text-2xl font-black text-[#0f172a] tracking-tight">Community Care</h1>
+        <div className="flex items-center justify-center mb-6">
+  <img src="/logo.svg" alt="Community Care" className="w-28 h-20 object-contain drop-shadow-md animate-pulse" />
+</div><h1 className="text-2xl font-black text-[#0f172a] tracking-tight">Community Care</h1>
         <p className="text-xs text-slate-500 font-semibold mt-1">Autonomous Relief & Dispatch</p>
         <div className="w-full mt-10">
           <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
