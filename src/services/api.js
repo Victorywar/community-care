@@ -1,67 +1,69 @@
 ﻿const API_BASE = 'http://10.187.190.237:5000/api';
 
-const authHeader = () => {
-  const token = localStorage.getItem('cc_token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
-
 export const api = {
-  // Requests API
-  getRequests: async () => {
-    const res = await fetch(`${API_BASE}/requests`, { headers: { ...authHeader() } });
-    if (!res.ok) throw new Error('Failed to fetch requests');
+  // Profiles & DP
+  getProfile: async (email) => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/profile/${encodeURIComponent(email)}`);
+      return res.ok ? await res.json() : null;
+    } catch { return null; }
+  },
+  updateProfile: async (data) => {
+    const res = await fetch(`${API_BASE}/auth/profile`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
     return await res.json();
   },
 
+  // Aid Requests
+  getRequests: async () => {
+    const res = await fetch(`${API_BASE}/requests`);
+    return res.ok ? await res.json() : [];
+  },
   createRequest: async (data) => {
     const res = await fetch(`${API_BASE}/requests`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeader() },
-      body: JSON.stringify(data),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
     });
-    if (!res.ok) throw new Error('Failed to create request');
     return await res.json();
   },
-
   updateRequestStatus: async (id, status, extra = {}) => {
     const res = await fetch(`${API_BASE}/requests/${id}/status`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', ...authHeader() },
-      body: JSON.stringify({ status, ...extra }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status, ...extra })
     });
-    if (!res.ok) throw new Error('Failed to update request');
     return await res.json();
   },
 
-  // Donations API
-  getDonations: async () => {
-    const res = await fetch(`${API_BASE}/donations`, { headers: { ...authHeader() } });
-    if (!res.ok) throw new Error('Failed to fetch donations');
-    return await res.json();
+  // Notifications
+  getNotifications: async (role) => {
+    try {
+      const res = await fetch(`${API_BASE}/notifications?role=${encodeURIComponent(role || 'ALL')}`);
+      return res.ok ? await res.json() : [];
+    } catch { return []; }
+  },
+  markNotificationsRead: async () => {
+    try {
+      await fetch(`${API_BASE}/notifications/mark-read`, { method: 'PATCH' });
+    } catch {}
   },
 
-  createDonation: async (data) => {
-    const res = await fetch(`${API_BASE}/donations`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeader() },
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) throw new Error('Failed to register donation');
-    return await res.json();
-  },
-
-  // Chat / Messages API
+  // Live Chat
   getMessages: async () => {
-    const res = await fetch(`${API_BASE}/messages`, { headers: { ...authHeader() } });
-    if (!res.ok) return [];
-    return await res.json();
+    try {
+      const res = await fetch(`${API_BASE}/messages`);
+      return res.ok ? await res.json() : [];
+    } catch { return []; }
   },
-
-  sendMessage: async (text) => {
+  sendMessage: async (data) => {
     const res = await fetch(`${API_BASE}/messages`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeader() },
-      body: JSON.stringify({ text }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
     });
     return await res.json();
   }
