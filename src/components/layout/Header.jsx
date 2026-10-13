@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Bell, LogOut, HeartHandshake, User, Settings, CheckCheck, Menu, X, CheckCircle2 } from 'lucide-react';
+import { Bell, LogOut, User, Settings, CheckCheck, Menu, X, CheckCircle2 } from 'lucide-react';
 import { api } from '../../services/api';
 import ProfileSettingsModal from './ProfileSettingsModal';
 
@@ -15,13 +15,13 @@ export default function Header({ currentUser, onLogout, onToggleSidebar, activeT
       const list = await api.getNotifications(role);
       setNotifications(Array.isArray(list) ? list : []);
     } catch {
-      // Keep existing list on transient network dip
+      // Keep existing list on transient dip
     }
   };
 
   useEffect(() => {
     fetchNotifs();
-    const interval = setInterval(fetchNotifs, 4000); // Live poll every 4 seconds
+    const interval = setInterval(fetchNotifs, 4000);
     return () => clearInterval(interval);
   }, [userProfile?.role]);
 
@@ -50,8 +50,9 @@ export default function Header({ currentUser, onLogout, onToggleSidebar, activeT
             </button>
           )}
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-black flex items-center justify-center text-white shadow-md border border-slate-800">
-              <HeartHandshake className="w-5 h-5" />
+            {/* Unified Logo */}
+            <div className="w-10 h-8 flex items-center justify-center shrink-0">
+              <img src="/logo.svg" alt="CommunityCare" className="w-full h-full object-contain" />
             </div>
             <div>
               <h1 className="font-black text-sm sm:text-base text-slate-900 leading-tight">CommunityCare</h1>
@@ -61,7 +62,7 @@ export default function Header({ currentUser, onLogout, onToggleSidebar, activeT
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Notification Bell with Real Badge */}
+          {/* Notification Bell */}
           <div className="relative">
             <button 
               onClick={() => setShowNotifTray(prev => !prev)}
@@ -76,7 +77,7 @@ export default function Header({ currentUser, onLogout, onToggleSidebar, activeT
               )}
             </button>
 
-            {/* Notification Drawer Modal */}
+            {/* Notification Drawer */}
             {showNotifTray && (
               <>
                 <div 
