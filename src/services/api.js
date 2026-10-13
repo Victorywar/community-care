@@ -1,125 +1,69 @@
-﻿const API_BASE_URL = 'http://localhost:5000/api';
+﻿// Automatic base URL detection: Use network IP on native mobile, localhost on web browser
+const isNative = window.Capacitor !== undefined || window.location.protocol === 'capacitor:';
+export const API_BASE_URL = isNative
+  ? 'http://10.187.190.237:5000/api'
+  : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api');
 
-const getHeaders = () => {
+const getAuthHeaders = () => {
   const token = localStorage.getItem('community_care_token');
-  const headers = {
-    'Content-Type': 'application/json'
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
   };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  return headers;
 };
 
 export const api = {
-  // Authentication
-  login: async (email, password, role) => {
+  // Auth
+  login: async (credentials) => {
     const res = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, role })
+      body: JSON.stringify(credentials)
     });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || 'Login failed');
+    }
     return res.json();
   },
 
-  register: async (userData) => {
-    const res = await fetch(`${API_BASE_URL}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(userData)
-    });
-    return res.json();
-  },
-
-  getProfile: async () => {
+  getCurrentUser: async () => {
     const res = await fetch(`${API_BASE_URL}/auth/me`, {
-      headers: getHeaders()
+      headers: getAuthHeaders()
     });
+    if (!res.ok) throw new Error('Session invalid');
     return res.json();
   },
 
-  // Relief Requests
+  // Requests
   getRequests: async () => {
     const res = await fetch(`${API_BASE_URL}/requests`, {
-      headers: getHeaders()
+      headers: getAuthHeaders()
     });
+    if (!res.ok) throw new Error('Failed to fetch requests');
     return res.json();
   },
 
-  createRequest: async (data) => {
+  createRequest: async (requestData) => {
     const res = await fetch(`${API_BASE_URL}/requests`, {
       method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data)
+      headers: getAuthHeaders(),
+      body: JSON.stringify(requestData)
     });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || 'Failed to create request');
+    }
     return res.json();
   },
 
-  updateRequestStatus: async (requestId, status, assignedVolunteer = '') => {
-    const res = await fetch(`${API_BASE_URL}/requests/${requestId}/status`, {
+  confirmReceipt: async (id, remarks) => {
+    const res = await fetch(`${API_BASE_URL}/requests/${id}/confirm`, {
       method: 'PATCH',
-      headers: getHeaders(),
-      body: JSON.stringify({ status, assignedVolunteer })
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ remarks })
     });
-    return res.json();
-  },
-
-  // Donations
-  getDonations: async () => {
-    const res = await fetch(`${API_BASE_URL}/donations`, {
-      headers: getHeaders()
-    });
-    return res.json();
-  },
-
-  createDonation: async (data) => {
-    const res = await fetch(`${API_BASE_URL}/donations`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data)
-    });
-    return res.json();
-  },
-
-  // Admin Members & Volunteer Approval
-  getMembers: async () => {
-    const res = await fetch(`${API_BASE_URL}/admin/members`, {
-      headers: getHeaders()
-    });
-    return res.json();
-  },
-
-  updateMemberStatus: async (memberId, isApproved) => {
-    const res = await fetch(`${API_BASE_URL}/admin/members/${memberId}/status`, {
-      method: 'PATCH',
-      headers: getHeaders(),
-      body: JSON.stringify({ isApproved })
-    });
-    return res.json();
-  },
-
-  // Notifications
-  getNotifications: async () => {
-    const res = await fetch(`${API_BASE_URL}/admin/notifications`, {
-      headers: getHeaders()
-    });
-    return res.json();
-  },
-
-  // Live Relay Chat
-  getMessages: async () => {
-    const res = await fetch(`${API_BASE_URL}/chat`, {
-      headers: getHeaders()
-    });
-    return res.json();
-  },
-
-  sendMessage: async (text) => {
-    const res = await fetch(`${API_BASE_URL}/chat`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify({ text })
-    });
+    if (!res.ok) throw new Error('Failed to confirm receipt');
     return res.json();
   }
 };

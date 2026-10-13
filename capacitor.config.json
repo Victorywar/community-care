@@ -1,6 +1,9 @@
-{
-  "appId": "com.communitycare.app",
+﻿{
+  "appId": "org.communitycare.app",
   "appName": "Community Care",
   "webDir": "dist",
-  "bundledWebRuntime": false
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  }
 }

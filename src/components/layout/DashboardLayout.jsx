@@ -11,6 +11,7 @@ import LiveRelayChat from '../../pages/admin/LiveRelayChat';
 
 export default function DashboardLayout({ currentUser, onLogout }) {
   const [activeTab, setActiveTab] = useState('home');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const renderActiveScreen = () => {
     switch (activeTab) {
@@ -34,18 +35,37 @@ export default function DashboardLayout({ currentUser, onLogout }) {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#f8faff]">
+    <div className="flex min-h-screen bg-[#f8faff] relative overflow-x-hidden">
+      {/* Mobile Drawer Backdrop */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden transition-opacity"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar Component */}
       <Sidebar 
         activeTab={activeTab} 
-        onSelectTab={setActiveTab} 
+        onSelectTab={(tab) => {
+          setActiveTab(tab);
+          setSidebarOpen(false); // Auto-close drawer on mobile when clicking a tab
+        }} 
         currentUser={currentUser} 
-        onLogout={onLogout} 
+        onLogout={onLogout}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
       />
 
-      <div className="flex-1 flex flex-col min-w-0">
-        <Header currentUser={currentUser} onLogout={onLogout} />
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 w-full">
+        <Header 
+          currentUser={currentUser} 
+          onLogout={onLogout} 
+          onToggleSidebar={() => setSidebarOpen(prev => !prev)}
+        />
         
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
           {renderActiveScreen()}
         </main>
       </div>
