@@ -21,7 +21,6 @@ export default function RecipientDashboard({ currentUser, onLogout }) {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Form states
   const [item, setItem] = useState('');
   const [qty, setQty] = useState('1');
   const [desc, setDesc] = useState('');
@@ -80,21 +79,20 @@ export default function RecipientDashboard({ currentUser, onLogout }) {
   const deliveredCount = myRequests.filter(r => r.status === 'COMPLETED').length;
 
   const receiverCards = [
-    { label: 'Total Requisitions', count: myRequests.length, sub: 'கேட்ட மொத்த உதவிகள்', icon: HeartHandshake, bg: 'bg-black text-white', border: 'border-slate-800' },
-    { label: 'Admin Pending', count: pendingCount, sub: 'அட்மின் சரிபார்ப்பில்', icon: Clock, bg: 'bg-amber-50 text-amber-800', border: 'border-amber-200' },
-    { label: 'In Transit', count: transitCount, sub: 'வாலண்டியர் வழியில்', icon: ShieldAlert, bg: 'bg-blue-50 text-blue-800', border: 'border-blue-200' },
-    { label: 'Items Received', count: deliveredCount, sub: 'பொருள் வந்துவிட்டது', icon: PackageCheck, bg: 'bg-emerald-50 text-emerald-800', border: 'border-emerald-200' },
+    { label: 'Total Requests', count: myRequests.length, sub: 'All aid requests', icon: HeartHandshake, bg: 'bg-black text-white', border: 'border-slate-800' },
+    { label: 'Pending Review', count: pendingCount, sub: 'Admin audit queue', icon: Clock, bg: 'bg-amber-50 text-amber-800', border: 'border-amber-200' },
+    { label: 'In Transit', count: transitCount, sub: 'Volunteer en route', icon: ShieldAlert, bg: 'bg-blue-50 text-blue-800', border: 'border-blue-200' },
+    { label: 'Items Received', count: deliveredCount, sub: 'Completed deliveries', icon: PackageCheck, bg: 'bg-emerald-50 text-emerald-800', border: 'border-emerald-200' },
   ];
 
   return (
     <AppLayout currentUser={currentUser} onLogout={onLogout} activeTab={activeTab} onSelectTab={setActiveTab}>
       {activeTab === 'home' && (
         <div className="space-y-6">
-          {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
             <div>
               <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Receiver Aid Tracker</h1>
-              <p className="text-xs text-slate-500 font-medium">உங்களின் உதவி கோரிக்கைகள் மற்றும் பொருட்கள் கிடைத்த விபரம் (Rows & Columns)</p>
+              <p className="text-xs text-slate-500 font-medium">Live track verification, donor pledges, and delivery status</p>
             </div>
             <div className="flex gap-2">
               <button 
@@ -109,7 +107,6 @@ export default function RecipientDashboard({ currentUser, onLogout }) {
             </div>
           </div>
 
-          {/* Receiver Stat Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {receiverCards.map((c, i) => {
               const Icon = c.icon;
@@ -128,45 +125,48 @@ export default function RecipientDashboard({ currentUser, onLogout }) {
             })}
           </div>
 
-          {/* Rows & Columns Table Format */}
+          {/* Box Container with Rows & Columns */}
           <div className="bg-white rounded-3xl border border-slate-200 p-4 sm:p-6 shadow-xs space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <div>
-                <h2 className="text-sm sm:text-base font-bold text-slate-900">எனது உதவி கோரிக்கைகள் அட்டவணை (Requisitions Status Table)</h2>
-                <p className="text-[11px] text-slate-400">அட்மின் அப்ரூவல், டோனார் சப்ளை மற்றும் வாலண்டியர் டெலிவரி விபரம்</p>
+                <h2 className="text-sm sm:text-base font-bold text-slate-900">Requisitions & Pipeline Tracking Table</h2>
+                <p className="text-[11px] text-slate-400">Detailed records of requests, approvals, assigned volunteers, and handovers</p>
               </div>
               <span className="text-[10px] font-bold px-2.5 py-0.5 bg-slate-100 text-slate-700 rounded-full">
-                {myRequests.length} பதிவுகள்
+                {myRequests.length} Records
               </span>
             </div>
 
             {myRequests.length === 0 ? (
               <div className="py-12 text-center text-xs text-slate-400">
                 <AlertCircle className="w-7 h-7 mx-auto mb-2 text-slate-300" />
-                நீங்கள் இதுவரை எந்த உதவி கோரிக்கையையும் பதிவு செய்யவில்லை.
+                No aid requests recorded yet. Click "Request Aid" to create one.
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-wider bg-slate-50">
-                      <th className="py-3 px-3">பொருள் & அளவு</th>
-                      <th className="py-3 px-3">அட்மின் ஒப்புதல்</th>
-                      <th className="py-3 px-3">டோனார் விபரம்</th>
-                      <th className="py-3 px-3">வாலண்டியர் டிரான்சிட்</th>
-                      <th className="py-3 px-3">பொருள் கிடைத்துவிட்டதா?</th>
-                      <th className="py-3 px-3">தேதி & நேரம்</th>
+                      <th className="py-3 px-3">Req ID</th>
+                      <th className="py-3 px-3">Item & Qty</th>
+                      <th className="py-3 px-3">Admin Status</th>
+                      <th className="py-3 px-3">Donor Details</th>
+                      <th className="py-3 px-3">Assigned Volunteer</th>
+                      <th className="py-3 px-3">Delivery Status</th>
+                      <th className="py-3 px-3">Updated At</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-slate-700">
                     {myRequests.map((r) => {
-                      const isAdminAccepted = r.status !== 'PENDING' && r.status !== 'REJECTED';
                       const isFunded = r.status === 'FUNDED' || r.status === 'DISPATCHED' || r.status === 'COMPLETED';
                       const isDispatched = r.status === 'DISPATCHED' || r.status === 'COMPLETED';
                       const isCompleted = r.status === 'COMPLETED';
 
                       return (
                         <tr key={r._id} className="hover:bg-slate-50/70 transition-colors">
+                          <td className="py-3.5 px-3 font-mono text-[11px] font-bold text-slate-500">
+                            #{r._id?.slice(-5)}
+                          </td>
                           <td className="py-3.5 px-3 font-semibold text-slate-900">
                             <div className="flex items-center gap-2">
                               {r.recipientPhoto && (
@@ -174,29 +174,25 @@ export default function RecipientDashboard({ currentUser, onLogout }) {
                               )}
                               <div>
                                 <span className="block font-bold">{r.itemName}</span>
-                                <span className="text-[10px] text-slate-400">{r.quantity} அலகுகள் ({r.location})</span>
+                                <span className="text-[10px] text-slate-400">{r.quantity} units • {r.location}</span>
                               </div>
                             </div>
                           </td>
-
-                          {/* Admin Verification Column */}
                           <td className="py-3.5 px-3">
                             {r.status === 'PENDING' ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                                <Clock className="w-3 h-3" /> Waiting Audit
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                                <Clock className="w-3 h-3" /> Pending Audit
                               </span>
                             ) : r.status === 'REJECTED' ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
                                 <XCircle className="w-3 h-3" /> Rejected
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-black text-white">
-                                <CheckCircle className="w-3 h-3" /> Accepted ({r.verifiedBy || 'Admin'})
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-black text-white">
+                                <CheckCircle className="w-3 h-3" /> Approved ({r.verifiedBy || 'Admin'})
                               </span>
                             )}
                           </td>
-
-                          {/* Donor Detail Column */}
                           <td className="py-3.5 px-3">
                             {isFunded ? (
                               <div>
@@ -204,11 +200,9 @@ export default function RecipientDashboard({ currentUser, onLogout }) {
                                 <p className="text-[10px] text-purple-700 font-semibold">{r.donationType || 'Supplies'}</p>
                               </div>
                             ) : (
-                              <span className="text-[10px] text-slate-400 italic">டோனார் இன்னும் எடுக்கவில்லை</span>
+                              <span className="text-[10px] text-slate-400 italic">Awaiting Donor</span>
                             )}
                           </td>
-
-                          {/* Volunteer Transit Column */}
                           <td className="py-3.5 px-3">
                             {isDispatched ? (
                               <div>
@@ -218,31 +212,27 @@ export default function RecipientDashboard({ currentUser, onLogout }) {
                                 <p className="text-[10px] text-slate-400">{r.pickupLocation || 'Central Depot'}</p>
                               </div>
                             ) : isFunded ? (
-                              <span className="text-[10px] text-amber-600 font-semibold">வாலண்டியர் பிக்கப்பிற்கு தயார்</span>
+                              <span className="text-[10px] text-amber-600 font-semibold">Ready for Pickup</span>
                             ) : (
-                              <span className="text-[10px] text-slate-400 italic">பிக்அப் ஆகவில்லை</span>
+                              <span className="text-[10px] text-slate-400 italic">Not Assigned</span>
                             )}
                           </td>
-
-                          {/* Received Status Column */}
                           <td className="py-3.5 px-3">
                             {isCompleted ? (
                               <div>
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                                  <CheckCircle className="w-3 h-3" /> வந்து சேர்ந்தது (Delivered)
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                  <CheckCircle className="w-3 h-3" /> Received & Signed
                                 </span>
                                 <div className="flex items-center gap-1 text-[10px] text-amber-500 font-bold mt-0.5">
-                                  <Star className="w-3 h-3 fill-amber-400" /> {r.reviewStars || 5} / 5 ரேட்டிங்
+                                  <Star className="w-3 h-3 fill-amber-400" /> {r.reviewStars || 5} / 5
                                 </div>
                               </div>
                             ) : (
-                              <span className="text-[10px] text-slate-400">இன்னும் வரவில்லை</span>
+                              <span className="text-[10px] font-semibold text-slate-500">{r.status}</span>
                             )}
                           </td>
-
-                          {/* Date Column */}
                           <td className="py-3.5 px-3 text-[10px] text-slate-400">
-                            {new Date(r.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            {new Date(r.updatedAt || r.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                           </td>
                         </tr>
                       );
@@ -259,7 +249,7 @@ export default function RecipientDashboard({ currentUser, onLogout }) {
         <div className="max-w-xl mx-auto bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
           <div>
             <h2 className="text-lg font-black text-slate-900">Request Relief or Food Aid</h2>
-            <p className="text-xs text-slate-400">Submit a requisition with photo reference for immediate admin verification</p>
+            <p className="text-xs text-slate-400">Submit a requisition with photo reference for immediate verification</p>
           </div>
           <form onSubmit={handleCreateRequest} className="space-y-3 text-xs">
             <div>
