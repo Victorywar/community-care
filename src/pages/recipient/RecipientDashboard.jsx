@@ -11,7 +11,7 @@ import {
   HeartHandshake, 
   PackageCheck,
   ShieldAlert,
-  CheckCircle,
+  CheckCircle2,
   XCircle,
   Truck
 } from 'lucide-react';
@@ -125,7 +125,7 @@ export default function RecipientDashboard({ currentUser, onLogout }) {
             })}
           </div>
 
-          {/* Box Container with Rows & Columns */}
+          {/* Clean Box Table */}
           <div className="bg-white rounded-3xl border border-slate-200 p-4 sm:p-6 shadow-xs space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <div>
@@ -178,21 +178,26 @@ export default function RecipientDashboard({ currentUser, onLogout }) {
                               </div>
                             </div>
                           </td>
+                          
+                          {/* Clean Admin Status with Green Tick */}
                           <td className="py-3.5 px-3">
                             {r.status === 'PENDING' ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                                <Clock className="w-3 h-3" /> Pending Audit
+                              <span className="inline-flex items-center gap-1.5 text-amber-600 font-semibold text-[11px]">
+                                <Clock className="w-3.5 h-3.5 text-amber-500" /> Pending Audit
                               </span>
                             ) : r.status === 'REJECTED' ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                                <XCircle className="w-3 h-3" /> Rejected
+                              <span className="inline-flex items-center gap-1.5 text-rose-600 font-semibold text-[11px]">
+                                <XCircle className="w-3.5 h-3.5 text-rose-500" /> Rejected
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-black text-white">
-                                <CheckCircle className="w-3 h-3" /> Approved ({r.verifiedBy || 'Admin'})
+                              <span className="inline-flex items-center gap-1.5 text-emerald-700 font-semibold text-[11px]">
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600 stroke-[2.5]" />
+                                <span>Approved</span>
+                                <span className="text-[10px] text-slate-400 font-normal">({r.verifiedBy || 'Admin Control'})</span>
                               </span>
                             )}
                           </td>
+
                           <td className="py-3.5 px-3">
                             {isFunded ? (
                               <div>
@@ -203,6 +208,7 @@ export default function RecipientDashboard({ currentUser, onLogout }) {
                               <span className="text-[10px] text-slate-400 italic">Awaiting Donor</span>
                             )}
                           </td>
+
                           <td className="py-3.5 px-3">
                             {isDispatched ? (
                               <div>
@@ -217,14 +223,15 @@ export default function RecipientDashboard({ currentUser, onLogout }) {
                               <span className="text-[10px] text-slate-400 italic">Not Assigned</span>
                             )}
                           </td>
+
                           <td className="py-3.5 px-3">
                             {isCompleted ? (
                               <div>
-                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                                  <CheckCircle className="w-3 h-3" /> Received & Signed
+                                <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold text-[11px]">
+                                  <CheckCircle2 className="w-4 h-4 text-emerald-600 stroke-[2.5]" /> Delivered & Signed
                                 </span>
                                 <div className="flex items-center gap-1 text-[10px] text-amber-500 font-bold mt-0.5">
-                                  <Star className="w-3 h-3 fill-amber-400" /> {r.reviewStars || 5} / 5
+                                  <Star className="w-3 h-3 fill-amber-400 text-amber-400" /> {r.reviewStars || 5} / 5
                                 </div>
                               </div>
                             ) : (

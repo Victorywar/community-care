@@ -134,8 +134,8 @@ export default function DonorDashboard({ currentUser, onLogout }) {
                         <h3 className="font-bold text-sm text-slate-900">{r.itemName}</h3>
                         <p className="text-xs text-slate-500">{r.quantity} units • Requested by: {r.recipientName} ({r.location})</p>
                       </div>
-                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-black text-white">
-                        Admin Approved
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 stroke-[2.5]" /> Admin Approved
                       </span>
                     </div>
 
@@ -226,20 +226,21 @@ export default function DonorDashboard({ currentUser, onLogout }) {
                         <td className="py-3.5 px-3 text-slate-500">{m.location}</td>
                         <td className="py-3.5 px-3">
                           {m.volunteerName ? (
-                            <span className="font-bold text-blue-700 flex items-center gap-1">
-                              <Truck className="w-3 h-3" /> {m.volunteerName}
+                            <span className="font-semibold text-slate-800 flex items-center gap-1">
+                              <Truck className="w-3 h-3 text-blue-600" /> {m.volunteerName}
                             </span>
                           ) : (
                             <span className="text-[10px] text-slate-400 italic">Awaiting Volunteer</span>
                           )}
                         </td>
                         <td className="py-3.5 px-3">
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                            m.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' :
-                            m.status === 'DISPATCHED' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-slate-100 text-slate-700'
-                          }`}>
-                            {m.status === 'COMPLETED' ? 'Delivered' : m.status}
-                          </span>
+                          {m.status === 'COMPLETED' ? (
+                            <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold text-[11px]">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 stroke-[2.5]" /> Delivered
+                            </span>
+                          ) : (
+                            <span className="text-[11px] font-semibold text-slate-600">{m.status}</span>
+                          )}
                         </td>
                         <td className="py-3.5 px-3 text-[10px] text-slate-400">
                           {new Date(m.updatedAt || m.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}

@@ -9,8 +9,7 @@ import {
   AlertCircle, 
   CheckCircle2, 
   Package, 
-  Award,
-  CheckCircle
+  Award
 } from 'lucide-react';
 
 export default function VolunteerDashboard({ currentUser, onLogout }) {
@@ -131,7 +130,7 @@ export default function VolunteerDashboard({ currentUser, onLogout }) {
                         <h3 className="font-bold text-sm text-slate-900">{r.itemName}</h3>
                         <p className="text-xs text-slate-500">Destination: {r.location} • Donor: {r.donorName}</p>
                       </div>
-                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700">Ready</span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">Ready</span>
                     </div>
 
                     <OrderTimeline request={r} />
@@ -205,8 +204,8 @@ export default function VolunteerDashboard({ currentUser, onLogout }) {
                         <td className="py-3.5 px-3 text-slate-500">{a.location}</td>
                         <td className="py-3.5 px-3">
                           {a.status === 'COMPLETED' ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                              <CheckCircle className="w-3 h-3" /> Delivered ({a.reviewStars}★)
+                            <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold text-[11px]">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 stroke-[2.5]" /> Delivered ({a.reviewStars}★)
                             </span>
                           ) : (
                             <button 
