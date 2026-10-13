@@ -1,7 +1,8 @@
 ﻿import React, { useState, useEffect } from 'react';
 import Header from '../../components/layout/Header';
+import OrderTimeline from '../../components/common/OrderTimeline';
 import { api } from '../../services/api';
-import { PlusCircle, Send, Clock, CheckCircle } from 'lucide-react';
+import { PlusCircle, Camera, Check, Star, RefreshCw } from 'lucide-react';
 
 export default function RecipientDashboard({ currentUser, onLogout }) {
   const [requests, setRequests] = useState([]);
@@ -10,9 +11,10 @@ export default function RecipientDashboard({ currentUser, onLogout }) {
   const [qty, setQty] = useState('1');
   const [desc, setDesc] = useState('');
   const [location, setLocation] = useState('');
+  const [photo, setPhoto] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const loadRequests = async () => {
+  const fetchMyRequests = async () => {
     try {
       const data = await api.getRequests();
       setRequests(Array.isArray(data) ? data : []);
@@ -21,7 +23,15 @@ export default function RecipientDashboard({ currentUser, onLogout }) {
     }
   };
 
-  useEffect(() => { loadRequests(); }, []);
+  useEffect(() => { fetchMyRequests(); }, []);
+
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => setPhoto(reader.result);
+    reader.readAsDataURL(file);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,88 +42,100 @@ export default function RecipientDashboard({ currentUser, onLogout }) {
         itemName: item,
         quantity: parseInt(qty) || 1,
         description: desc,
-        location: location || 'Field Sector',
+        location: location || 'Local Ward',
         recipientName: currentUser?.name || 'Receiver',
-        status: 'PENDING'
+        recipientPhoto: photo
       });
-      setItem(''); setDesc(''); setLocation('');
+      setItem(''); setDesc(''); setLocation(''); setPhoto('');
       setShowModal(false);
-      loadRequests();
-    } catch (err) {
-      alert("Error submitting request. Is backend running?");
+      fetchMyRequests();
+    } catch {
+      alert("Error submitting request");
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 pb-16 flex flex-col">
-      <Header currentUser={currentUser} onLogout={onLogout} activeTitle="Receiver Platform" />
-      
-      <main className="flex-1 p-4 max-w-md mx-auto w-full space-y-4">
-        <div className="bg-blue-600 text-white p-4 rounded-2xl shadow-sm space-y-2">
-          <h2 className="font-bold text-sm">Need Relief or Food Aid?</h2>
-          <p className="text-xs text-blue-100">Submit a fresh request directly to the community dispatch team.</p>
+    <div className="min-h-screen bg-slate-50 text-slate-800 pb-20">
+      <Header currentUser={currentUser} onLogout={onLogout} activeTitle="Recipient Platform" />
+
+      <main className="max-w-xl mx-auto p-4 space-y-6">
+        <div className="bg-gradient-to-tr from-blue-600 to-indigo-600 text-white p-5 rounded-3xl shadow-lg space-y-3">
+          <h2 className="text-base font-black">Need Essential Relief or Supplies?</h2>
+          <p className="text-xs text-blue-100">Submit an aid requisition with photos to be verified by administrators.</p>
           <button 
-            onClick={() => setShowModal(true)}
-            className="w-full py-2.5 bg-white text-blue-600 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-xs"
+            onClick={() => setShowModal(true)} 
+            className="w-full py-3 bg-white text-blue-600 font-bold rounded-2xl text-xs flex items-center justify-center gap-2 shadow-sm"
           >
-            <PlusCircle className="w-4 h-4" /> Request Food or Essentials
+            <PlusCircle className="w-4 h-4" /> Create New Requisition with Photo
           </button>
         </div>
 
-        <div className="space-y-2">
-          <h3 className="font-bold text-xs text-slate-500 uppercase tracking-wider">My Relief Requests</h3>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+            <h3 className="font-black text-sm text-slate-900">My Requisition Timelines</h3>
+            <button onClick={fetchMyRequests} className="p-1.5 bg-white border border-slate-200 rounded-lg">
+              <RefreshCw className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
           {requests.length === 0 ? (
             <div className="bg-white p-8 rounded-2xl border border-dashed border-slate-200 text-center text-xs text-slate-400">
-              You haven't requested any aid yet. Tap the button above to request.
+              You have no active requests. Tap the button above to request aid.
             </div>
           ) : (
-            requests.map((r) => (
-              <div key={r._id} className="bg-white p-4 rounded-2xl border border-slate-200 space-y-2">
+            requests.map(r => (
+              <div key={r._id} className="bg-white p-4 rounded-2xl border border-slate-200 space-y-3 shadow-xs">
                 <div className="flex justify-between items-start">
-                  <span className="font-bold text-sm text-slate-900">{r.itemName}</span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    r.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
-                  }`}>
+                  <div>
+                    <h4 className="font-bold text-sm text-slate-900">{r.itemName}</h4>
+                    <p className="text-xs text-slate-400">{r.quantity} units • {r.location}</p>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
                     {r.status}
                   </span>
                 </div>
-                <p className="text-xs text-slate-500">{r.description || 'Requested items'}</p>
-                <div className="pt-2 border-t border-slate-100 flex justify-between text-[11px] text-slate-400">
-                  <span>Units: {r.quantity}</span>
-                  <span>{r.status === 'PENDING' ? 'Waiting for Admin verification' : 'In Workflow Pipeline'}</span>
-                </div>
+
+                <OrderTimeline request={r} />
+
+                {r.status === 'COMPLETED' && (
+                  <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-900 flex items-center justify-between">
+                    <span>Delivered & Verified</span>
+                    <span className="flex items-center gap-1 font-bold"><Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> {r.reviewStars} / 5</span>
+                  </div>
+                )}
               </div>
             ))
           )}
         </div>
 
-        {/* Modal Form */}
+        {/* Modal Requisition Form */}
         {showModal && (
-          <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-3">
-            <div className="bg-white w-full max-w-sm rounded-2xl p-5 space-y-3">
-              <h3 className="font-bold text-sm text-slate-900">New Aid Request</h3>
-              <form onSubmit={handleSubmit} className="space-y-2.5 text-xs">
+          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+            <div className="bg-white w-full max-w-sm rounded-3xl p-5 space-y-3 shadow-2xl">
+              <h3 className="font-bold text-sm text-slate-900">New Requisition</h3>
+              <form onSubmit={handleSubmit} className="space-y-3 text-xs">
                 <div>
-                  <label className="font-semibold text-slate-600 block mb-1">Item Required (e.g., Food Box, Rice, Water)</label>
-                  <input required value={item} onChange={(e) => setItem(e.target.value)} className="w-full p-2.5 rounded-xl border border-slate-200" placeholder="Rice 10kg, Food Pack..." />
+                  <label className="font-bold text-slate-700 block mb-1">Item Required</label>
+                  <input required value={item} onChange={(e) => setItem(e.target.value)} placeholder="Food Box, Medicine, Water..." className="w-full p-2.5 rounded-xl border border-slate-200" />
                 </div>
                 <div>
-                  <label className="font-semibold text-slate-600 block mb-1">Quantity</label>
+                  <label className="font-bold text-slate-700 block mb-1">Quantity</label>
                   <input type="number" min="1" value={qty} onChange={(e) => setQty(e.target.value)} className="w-full p-2.5 rounded-xl border border-slate-200" />
                 </div>
                 <div>
-                  <label className="font-semibold text-slate-600 block mb-1">Your Delivery Address / Location</label>
-                  <input required value={location} onChange={(e) => setLocation(e.target.value)} className="w-full p-2.5 rounded-xl border border-slate-200" placeholder="Ward 4, North Camp..." />
+                  <label className="font-bold text-slate-700 block mb-1">Delivery Address</label>
+                  <input required value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Sector 2, South Camp..." className="w-full p-2.5 rounded-xl border border-slate-200" />
                 </div>
                 <div>
-                  <label className="font-semibold text-slate-600 block mb-1">Urgent Notes</label>
-                  <textarea value={desc} onChange={(e) => setDesc(e.target.value)} className="w-full p-2.5 rounded-xl border border-slate-200" placeholder="Any specific requirements..."></textarea>
+                  <label className="font-bold text-slate-700 block mb-1">Photo Reference (Optional):</label>
+                  <input type="file" accept="image/*" onChange={handlePhotoUpload} className="w-full text-xs" />
+                  {photo && <img src={photo} alt="Preview" className="w-16 h-16 object-cover rounded-xl mt-2 border" />}
                 </div>
                 <div className="flex gap-2 pt-2">
-                  <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-600">Cancel</button>
-                  <button type="submit" disabled={submitting} className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white font-bold">{submitting ? 'Submitting...' : 'Submit Request'}</button>
+                  <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-2 rounded-xl border font-bold">Cancel</button>
+                  <button type="submit" disabled={submitting} className="flex-1 py-2 bg-blue-600 text-white font-bold rounded-xl">{submitting ? 'Submitting...' : 'Post Requisition'}</button>
                 </div>
               </form>
             </div>
