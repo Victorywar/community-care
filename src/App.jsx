@@ -55,7 +55,7 @@ function SplashScreen() {
         </div>
       </div>
       <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium">
-        <ShieldCheck size={14} />
+        <img src="/logo.svg" alt="CommunityCare" className="w-10 h-10 object-contain drop-shadow-sm" />
         <span>Official Community Care Platform</span>
       </div>
     </div>
