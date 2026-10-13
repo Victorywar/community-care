@@ -1,69 +1,68 @@
-﻿// Automatic base URL detection: Use network IP on native mobile, localhost on web browser
-const isNative = window.Capacitor !== undefined || window.location.protocol === 'capacitor:';
-export const API_BASE_URL = isNative
-  ? 'http://10.187.190.237:5000/api'
-  : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api');
+﻿const API_BASE = 'http://10.187.190.237:5000/api';
 
-const getAuthHeaders = () => {
-  const token = localStorage.getItem('community_care_token');
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-  };
+const authHeader = () => {
+  const token = localStorage.getItem('cc_token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
 export const api = {
-  // Auth
-  login: async (credentials) => {
-    const res = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(credentials)
-    });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || 'Login failed');
-    }
-    return res.json();
-  },
-
-  getCurrentUser: async () => {
-    const res = await fetch(`${API_BASE_URL}/auth/me`, {
-      headers: getAuthHeaders()
-    });
-    if (!res.ok) throw new Error('Session invalid');
-    return res.json();
-  },
-
-  // Requests
+  // Requests API
   getRequests: async () => {
-    const res = await fetch(`${API_BASE_URL}/requests`, {
-      headers: getAuthHeaders()
-    });
+    const res = await fetch(`${API_BASE}/requests`, { headers: { ...authHeader() } });
     if (!res.ok) throw new Error('Failed to fetch requests');
-    return res.json();
+    return await res.json();
   },
 
-  createRequest: async (requestData) => {
-    const res = await fetch(`${API_BASE_URL}/requests`, {
+  createRequest: async (data) => {
+    const res = await fetch(`${API_BASE}/requests`, {
       method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(requestData)
+      headers: { 'Content-Type': 'application/json', ...authHeader() },
+      body: JSON.stringify(data),
     });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || 'Failed to create request');
-    }
-    return res.json();
+    if (!res.ok) throw new Error('Failed to create request');
+    return await res.json();
   },
 
-  confirmReceipt: async (id, remarks) => {
-    const res = await fetch(`${API_BASE_URL}/requests/${id}/confirm`, {
+  updateRequestStatus: async (id, status, extra = {}) => {
+    const res = await fetch(`${API_BASE}/requests/${id}/status`, {
       method: 'PATCH',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ remarks })
+      headers: { 'Content-Type': 'application/json', ...authHeader() },
+      body: JSON.stringify({ status, ...extra }),
     });
-    if (!res.ok) throw new Error('Failed to confirm receipt');
-    return res.json();
+    if (!res.ok) throw new Error('Failed to update request');
+    return await res.json();
+  },
+
+  // Donations API
+  getDonations: async () => {
+    const res = await fetch(`${API_BASE}/donations`, { headers: { ...authHeader() } });
+    if (!res.ok) throw new Error('Failed to fetch donations');
+    return await res.json();
+  },
+
+  createDonation: async (data) => {
+    const res = await fetch(`${API_BASE}/donations`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeader() },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error('Failed to register donation');
+    return await res.json();
+  },
+
+  // Chat / Messages API
+  getMessages: async () => {
+    const res = await fetch(`${API_BASE}/messages`, { headers: { ...authHeader() } });
+    if (!res.ok) return [];
+    return await res.json();
+  },
+
+  sendMessage: async (text) => {
+    const res = await fetch(`${API_BASE}/messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeader() },
+      body: JSON.stringify({ text }),
+    });
+    return await res.json();
   }
 };
