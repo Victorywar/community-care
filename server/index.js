@@ -357,6 +357,70 @@ app.patch('/api/users/profile', (req, res) => res.json({ success: true, user: re
 app.post('/api/seed', (req, res) => res.json({ success: true, count: memRequests.length }));
 
 // Server start
+
+// VOLUNTEER MODULE ENDPOINTS
+
+// 1. Volunteer Accept Task (Atomic Check)
+app.patch('/api/volunteer/accept/:id', (req, res) => {
+  const { id } = req.params;
+  const { volunteerId, volunteerName } = req.body;
+  const reqItem = memRequests.find(r => r._id === id);
+  
+  if (!reqItem) return res.status(404).json({ error: 'Donation not found' });
+  if (reqItem.volunteerId && reqItem.volunteerId !== volunteerId) {
+    return res.status(409).json({ error: 'Sorry, this donation has already been assigned to another volunteer. Refresh the page to view available donations.' });
+  }
+
+  reqItem.volunteerId = volunteerId || 'u-vol-1';
+  reqItem.volunteerName = volunteerName || 'Karthik Raja';
+  reqItem.status = 'VOLUNTEER_ASSIGNED';
+  
+  reqItem.timeline.push({
+    id: 'EVT-' + Date.now(),
+    status: 'VOLUNTEER_ASSIGNED',
+    time: new Date(),
+    actorRole: 'VOLUNTEER',
+    actorName: reqItem.volunteerName,
+    note: `${reqItem.volunteerName} accepted pickup for${reqItem.itemName}`
+  });
+
+  notify('DONOR', 'Volunteer Assigned', `Good news! A Community Care volunteer (${reqItem.volunteerName}) has accepted your donation. Pickup will be coordinated soon.`, id);
+  notify('ADMIN', 'Task Accepted', `${reqItem.volunteerName} volunteered for${reqItem.itemName}`, id);
+
+  res.json({ success: true, request: reqItem });
+});
+
+// 2. Volunteer Update Stage (Pickup Scheduled -> Collected -> Out for Delivery -> Delivered)
+app.patch('/api/volunteer/stage/:id', (req, res) => {
+  const { id } = req.params;
+  const { stage, actorName, note, proofPhoto, issue } = req.body;
+  const reqItem = memRequests.find(r => r._id === id);
+  if (!reqItem) return res.status(404).json({ error: 'Task not found' });
+
+  reqItem.status = stage;
+  if (proofPhoto) reqItem.deliveryProof = proofPhoto;
+  if (issue) reqItem.reportedIssue = issue;
+
+  reqItem.timeline.push({
+    id: 'EVT-' + Date.now(),
+    status: stage,
+    time: new Date(),
+    actorRole: 'VOLUNTEER',
+    actorName: actorName || reqItem.volunteerName || 'Volunteer',
+    note: note || `Status progressed to ${stage}`
+  });
+
+  if (stage === 'COLLECTED') {
+    notify('DONOR', 'Donation Collected', `Volunteer collected ${reqItem.itemName} from pickup point.`, id);
+  } else if (stage === 'IN_TRANSIT') {
+    notify('RECIPIENT', 'Out for Delivery', `Your requested aid (${reqItem.itemName}) is currently in transit!`, id);
+  } else if (stage === 'DELIVERED') {
+    notify('RECIPIENT', 'Delivery Arrived', `Your supplies have arrived. Please confirm receipt to complete the journey.`, id);
+  }
+
+  res.json({ success: true, request: reqItem });
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`>>> Community Care Backend Engine ACTIVE: http://0.0.0.0:${PORT} <<<`);
 });
