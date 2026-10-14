@@ -64,26 +64,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
-      {/* Role Switcher Toolbar with Safe-Area padding for Mobile Notches & Hotspot */}
-      <div className="bg-slate-900 text-white text-[11px] px-4 pt-[calc(env(safe-area-inset-top)+8px)] pb-2 flex items-center justify-between z-50 overflow-x-auto shadow-sm">
-        <span className="font-bold opacity-80 shrink-0 mr-2">Switch Role:</span>
-        <div className="flex gap-1.5 sm:gap-2">
-          {['ADMIN', 'DONOR', 'VOLUNTEER', 'RECIPIENT'].map(r => (
-            <button
-              key={r}
-              onClick={() => handleRoleChange(r)}
-              className={`px-3 py-1 rounded-full font-bold transition text-[10px] tracking-wide ${
-                currentUser.role === r 
-                  ? 'bg-emerald-500 text-white shadow-xs' 
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-              }`}
-            >
-              {r}
-            </button>
-          ))}
-        </div>
-      </div>
-
       <main className="flex-1">
         {currentUser.role === 'ADMIN' && <AdminDashboard currentUser={currentUser} onLogout={handleLogout} />}
         {currentUser.role === 'DONOR' && <DonorDashboard currentUser={currentUser} onLogout={handleLogout} />}
