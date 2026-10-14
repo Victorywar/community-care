@@ -1,64 +1,34 @@
-﻿const API_BASE = 'http://10.187.190.237:5000/api';
+﻿const getBaseUrl = () => {
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return 'http://localhost:5000/api';
+    }
+    return `http://${host}:5000/api`;
+  }
+  return 'http://localhost:5000/api';
+};
+
+const BASE_URL = getBaseUrl();
+
+async function request(path, options = {}) {
+  const url = `${BASE_URL}${path}`;
+  const res = await fetch(url, {
+    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    ...options,
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || errData.message || `Request failed (${res.status})`);
+  }
+  return res.json();
+}
 
 export const api = {
-  getRequests: async () => {
-    try {
-      const res = await fetch(`${API_BASE}/requests`);
-      return res.ok ? await res.json() : [];
-    } catch { return []; }
-  },
-
-  createRequest: async (data) => {
-    const res = await fetch(`${API_BASE}/requests`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    return await res.json();
-  },
-
-  updateTimelineStep: async (id, data) => {
-    const res = await fetch(`${API_BASE}/requests/${id}/timeline-step`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    return await res.json();
-  },
-
-  getUsers: async () => {
-    try {
-      const res = await fetch(`${API_BASE}/users`);
-      return res.ok ? await res.json() : [];
-    } catch { return []; }
-  },
-
-  getProfile: async (email) => {
-    try {
-      const res = await fetch(`${API_BASE}/auth/profile/${encodeURIComponent(email)}`);
-      return res.ok ? await res.json() : null;
-    } catch { return null; }
-  },
-
-  updateProfile: async (data) => {
-    const res = await fetch(`${API_BASE}/auth/profile`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    return await res.json();
-  },
-
-  getNotifications: async (role) => {
-    try {
-      const res = await fetch(`${API_BASE}/notifications?role=${encodeURIComponent(role || 'ALL')}`);
-      return res.ok ? await res.json() : [];
-    } catch { return []; }
-  },
-
-  markNotificationsRead: async () => {
-    try {
-      await fetch(`${API_BASE}/notifications/mark-read`, { method: 'PATCH' });
-    } catch {}
-  }
+  getRequests: () => request('/requests'),
+  createRequest: (data) => request('/requests', { method: 'POST', body: JSON.stringify(data) }),
+  updateTimelineStep: (id, data) => request(`/requests/${id}/timeline-step`, { method: 'PATCH', body: JSON.stringify(data) }),
+  getNotifications: (role) => request(`/notifications?role=${encodeURIComponent(role || 'ALL')}`),
+  markNotificationsRead: (role) => request('/notifications/mark-read', { method: 'PATCH', body: JSON.stringify({ role: role || 'ALL' }) }),
+  updateProfile: (data) => request('/users/profile', { method: 'PATCH', body: JSON.stringify(data) }),
 };
