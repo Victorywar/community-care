@@ -9,11 +9,19 @@ import RecipientDashboard from './pages/recipient/RecipientDashboard';
 function SplashScreen() {
   return (
     <div className="fixed inset-0 bg-white flex flex-col items-center justify-center p-6 z-50">
+      {/* Centered Professional Double-Ring Circular Emblem */}
       <div className="flex items-center justify-center mb-6">
-        <div className="w-28 h-28 rounded-full border-2 border-emerald-600/30 bg-emerald-50/50 flex items-center justify-center shadow-lg p-4 animate-pulse">
-          <img src="/logo.svg" alt="Community Care" className="w-full h-full object-contain drop-shadow-sm" />
+        <div className="relative w-32 h-32 rounded-full border border-emerald-200/80 bg-gradient-to-b from-emerald-50/70 to-emerald-100/40 flex items-center justify-center shadow-lg p-5">
+          <div className="w-full h-full rounded-full border border-dashed border-emerald-400/60 flex items-center justify-center p-3">
+            <img 
+              src="/logo.svg" 
+              alt="Community Care" 
+              className="w-full h-full object-contain drop-shadow-sm animate-pulse" 
+            />
+          </div>
         </div>
       </div>
+      
       <h1 className="text-2xl font-black text-slate-900 tracking-tight">Community Care</h1>
       <p className="text-xs text-slate-500 font-medium mt-1">Autonomous Relief & Dispatch</p>
       
@@ -56,16 +64,18 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
-      {/* Role Switcher Toolbar for Fast Review */}
-      <div className="bg-slate-900 text-white text-[11px] px-4 py-1.5 flex items-center justify-between z-50 overflow-x-auto">
-        <span className="font-bold opacity-80 shrink-0">Switch Role View:</span>
-        <div className="flex gap-2">
+      {/* Role Switcher Toolbar with Safe-Area padding for Mobile Notches & Hotspot */}
+      <div className="bg-slate-900 text-white text-[11px] px-4 pt-[calc(env(safe-area-inset-top)+8px)] pb-2 flex items-center justify-between z-50 overflow-x-auto shadow-sm">
+        <span className="font-bold opacity-80 shrink-0 mr-2">Switch Role:</span>
+        <div className="flex gap-1.5 sm:gap-2">
           {['ADMIN', 'DONOR', 'VOLUNTEER', 'RECIPIENT'].map(r => (
             <button
               key={r}
               onClick={() => handleRoleChange(r)}
-              className={`px-2.5 py-0.5 rounded-full font-bold transition ${
-                currentUser.role === r ? 'bg-emerald-500 text-white shadow-xs' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+              className={`px-3 py-1 rounded-full font-bold transition text-[10px] tracking-wide ${
+                currentUser.role === r 
+                  ? 'bg-emerald-500 text-white shadow-xs' 
+                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
               }`}
             >
               {r}
