@@ -72,7 +72,7 @@ export default function VolunteerDashboard({ currentUser, onLogout }) {
     { label: 'Available Jobs', count: readyToPick.length, sub: 'Awaiting pickup', icon: Package, bg: 'bg-blue-50 text-blue-800', border: 'border-blue-200' },
     { label: 'In My Transit', count: myDispatches.length, sub: 'Currently moving', icon: Truck, bg: 'bg-amber-50 text-amber-800', border: 'border-amber-200' },
     { label: 'Deliveries Done', count: myCompleted.length, sub: 'Completed handovers', icon: CheckCircle2, bg: 'bg-emerald-50 text-emerald-800', border: 'border-emerald-200' },
-    { label: 'Hero Rating', count: '5.0 ★', sub: 'Fleet performance', icon: Award, bg: 'bg-black text-white', border: 'border-slate-800' }
+    { label: 'Total Runs', count: allAttended.length, sub: 'Lifetime dispatches', icon: Award, bg: 'bg-purple-50 text-purple-800', border: 'border-purple-200' }
   ];
 
   return (
