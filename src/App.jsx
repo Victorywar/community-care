@@ -1,51 +1,32 @@
 ﻿import React, { useState, useEffect } from 'react';
 import Header from './components/layout/Header';
-import Sidebar from './components/layout/Sidebar';
 import LoginPage from './pages/auth/LoginPage';
-import AdminDashboard from './pages/admin/AdminDashboard';
 import DonorDashboard from './pages/donor/DonorDashboard';
 import VolunteerDashboard from './pages/volunteer/VolunteerDashboard';
 import RecipientDashboard from './pages/recipient/RecipientDashboard';
-
-function SplashScreen() {
-  return (
-    <div className="fixed inset-0 bg-white flex flex-col items-center justify-center p-6 z-50">
-      <div className="flex items-center justify-center mb-6">
-        <div className="relative w-32 h-32 rounded-full border border-emerald-200/80 bg-gradient-to-b from-emerald-50/70 to-emerald-100/40 flex items-center justify-center shadow-lg p-5">
-          <div className="w-full h-full rounded-full border border-dashed border-emerald-400/60 flex items-center justify-center p-3">
-            <img 
-              src="/logo.svg" 
-              alt="Community Care" 
-              className="w-full h-full object-contain drop-shadow-sm animate-pulse" 
-            />
-          </div>
-        </div>
-      </div>
-      <h1 className="text-2xl font-black text-slate-900 tracking-tight">Community Care</h1>
-      <p className="text-xs text-slate-500 font-medium mt-1">Autonomous Relief & Dispatch</p>
-      
-      <div className="w-64 max-w-full bg-slate-100 rounded-full h-1.5 mt-8 overflow-hidden">
-        <div className="bg-slate-900 h-full rounded-full animate-[progress_1.8s_ease-in-out_infinite]" style={{ width: '85%' }}></div>
-      </div>
-      <div className="flex justify-between w-64 max-w-full text-[10px] text-slate-400 font-semibold mt-2">
-        <span>Setting up dashboard...</span>
-        <span>100%</span>
-      </div>
-    </div>
-  );
-}
+import AdminDashboard from './pages/admin/AdminDashboard';
+import { api } from './services/api';
 
 export default function App() {
-  const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = localStorage.getItem('cc_user');
     return saved ? JSON.parse(saved) : null;
   });
+  const [notifications, setNotifications] = useState([]);
+
+  const refreshNotifs = async () => {
+    if (!currentUser) return;
+    try {
+      const list = await api.getNotifications(currentUser.role);
+      setNotifications(Array.isArray(list) ? list : []);
+    } catch {}
+  };
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 1500);
-    return () => clearTimeout(timer);
-  }, []);
+    refreshNotifs();
+    const interval = setInterval(refreshNotifs, 10000);
+    return () => clearInterval(interval);
+  }, [currentUser]);
 
   const handleLogin = (user) => {
     setCurrentUser(user);
@@ -57,12 +38,28 @@ export default function App() {
     setCurrentUser(null);
   };
 
-  if (loading) {
-    return <SplashScreen />;
-  }
-
   if (!currentUser) {
     return <LoginPage onLogin={handleLogin} />;
+  }
+
+  // Admin Verification Gate
+  if (currentUser.accountStatus === 'PENDING_APPROVAL') {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
+        <div className="max-w-md bg-white p-8 rounded-3xl border border-slate-200 text-center space-y-4 shadow-xl">
+          <div className="w-16 h-16 bg-amber-50 border border-amber-200 text-amber-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">
+            !
+          </div>
+          <h2 className="text-xl font-black text-slate-900">Verification Pending</h2>
+          <p className="text-xs text-slate-600 leading-relaxed">
+            Your account is currently awaiting admin verification. You will be notified once your account is approved.
+          </p>
+          <button onClick={handleLogout} className="px-5 py-2.5 bg-black text-white text-xs font-bold rounded-xl hover:bg-slate-800">
+            Sign Out
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
