@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import Header from './components/layout/Header';
 import Sidebar from './components/layout/Sidebar';
+import LoginPage from './pages/auth/LoginPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import DonorDashboard from './pages/donor/DonorDashboard';
 import VolunteerDashboard from './pages/volunteer/VolunteerDashboard';
@@ -9,7 +10,6 @@ import RecipientDashboard from './pages/recipient/RecipientDashboard';
 function SplashScreen() {
   return (
     <div className="fixed inset-0 bg-white flex flex-col items-center justify-center p-6 z-50">
-      {/* Centered Professional Double-Ring Circular Emblem */}
       <div className="flex items-center justify-center mb-6">
         <div className="relative w-32 h-32 rounded-full border border-emerald-200/80 bg-gradient-to-b from-emerald-50/70 to-emerald-100/40 flex items-center justify-center shadow-lg p-5">
           <div className="w-full h-full rounded-full border border-dashed border-emerald-400/60 flex items-center justify-center p-3">
@@ -21,7 +21,6 @@ function SplashScreen() {
           </div>
         </div>
       </div>
-      
       <h1 className="text-2xl font-black text-slate-900 tracking-tight">Community Care</h1>
       <p className="text-xs text-slate-500 font-medium mt-1">Autonomous Relief & Dispatch</p>
       
@@ -40,26 +39,30 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = localStorage.getItem('cc_user');
-    return saved ? JSON.parse(saved) : { name: 'Demo User', role: 'DONOR', email: 'donor@communitycare.org' };
+    return saved ? JSON.parse(saved) : null;
   });
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 1600);
+    const timer = setTimeout(() => setLoading(false), 1500);
     return () => clearTimeout(timer);
   }, []);
 
-  const handleRoleChange = (role) => {
-    const updated = { ...currentUser, role };
-    setCurrentUser(updated);
-    localStorage.setItem('cc_user', JSON.stringify(updated));
+  const handleLogin = (user) => {
+    setCurrentUser(user);
+    localStorage.setItem('cc_user', JSON.stringify(user));
   };
 
   const handleLogout = () => {
-    handleRoleChange('DONOR');
+    localStorage.removeItem('cc_user');
+    setCurrentUser(null);
   };
 
   if (loading) {
     return <SplashScreen />;
+  }
+
+  if (!currentUser) {
+    return <LoginPage onLogin={handleLogin} />;
   }
 
   return (
